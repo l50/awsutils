@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug magefile",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": ".mage/mage_output_file.go",
+      "buildFlags": ".mage/magefile.go",
+      "preLaunchTask": "create mage_output_file.go",
+      "postDebugTask": "delete mage_output_file.go",
+      "showLog": true
+    }
+  ]
+}

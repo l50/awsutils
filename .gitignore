@@ -1,0 +1,12 @@
+# Ensure that env_var test files with sensitive data aren't committed
+*.sensitive
+
+# Mage
+magefile
+*mage_output_file.go*
+
+# Delve envFile
+.env
+
+# VSCode
+*debug_bin*

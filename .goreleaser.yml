@@ -1,0 +1,10 @@
+---
+before:
+  hooks:
+    - go mod tidy
+
+build:
+  skip: true
+
+checksum:
+  algorithm: sha256
