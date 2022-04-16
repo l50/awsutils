@@ -161,3 +161,22 @@ func TestGetInstancePublicIP(t *testing.T) {
 			"error running DestroyInstance(): %v", err)
 	}
 }
+
+func TestGetRegion(t *testing.T) {
+	ec2client, err := CreateClient(region)
+	if err != nil {
+		t.Fatalf(
+			"error running CreateClient(): %v", err)
+	}
+
+	returnedRegion, err := GetRegion(ec2client)
+	if err != nil {
+		t.Fatalf(
+			"error running GetRegion(): %v", err)
+	}
+
+	if returnedRegion != region {
+		t.Fatalf(
+			"error running GetRegion(): %v", err)
+	}
+}

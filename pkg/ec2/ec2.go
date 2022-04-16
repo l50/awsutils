@@ -1,6 +1,8 @@
 package ec2
 
 import (
+	"errors"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -157,4 +159,16 @@ func GetInstancePublicIP(client *ec2.EC2, instanceID string) (string, error) {
 	}
 
 	return *result.Reservations[0].Instances[0].NetworkInterfaces[0].Association.PublicIp, nil
+}
+
+// GetRegion returns the region associted with the input
+// ec2 client.
+func GetRegion(client *ec2.EC2) (string, error) {
+	region := client.Config.Region
+
+	if region == nil {
+		return "", errors.New("failed to retrieve region")
+	}
+
+	return *region, nil
 }
