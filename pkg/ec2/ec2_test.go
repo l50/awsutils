@@ -9,7 +9,6 @@ import (
 )
 
 var (
-	region        = "us-west-1"
 	volumeSize, _ = utils.StringToInt64(os.Getenv("VOLUME_SIZE"))
 	ec2Params     = Params{
 		ImageID:          os.Getenv("AMI"),
@@ -23,20 +22,8 @@ var (
 	}
 )
 
-func TestCreateClient(t *testing.T) {
-	_, err := CreateClient(region)
-	if err != nil {
-		t.Fatalf(
-			"error running CreateClient(): %v", err)
-	}
-}
-
 func TestCreateInstance(t *testing.T) {
-	ec2client, err := CreateClient(region)
-	if err != nil {
-		t.Fatalf(
-			"error running CreateClient(): %v", err)
-	}
+	ec2client := CreateClient()
 
 	ec2Reservation, err := CreateInstance(ec2client, ec2Params)
 	if err != nil {
@@ -55,11 +42,7 @@ func TestCreateInstance(t *testing.T) {
 }
 
 func TestTagInstance(t *testing.T) {
-	ec2client, err := CreateClient(region)
-	if err != nil {
-		t.Fatalf(
-			"error running CreateClient(): %v", err)
-	}
+	ec2client := CreateClient()
 
 	ec2Reservation, err := CreateInstance(ec2client, ec2Params)
 	if err != nil {
@@ -83,11 +66,7 @@ func TestTagInstance(t *testing.T) {
 }
 
 func TestDestroyInstance(t *testing.T) {
-	ec2client, err := CreateClient(region)
-	if err != nil {
-		t.Fatalf(
-			"error running CreateClient(): %v", err)
-	}
+	ec2client := CreateClient()
 
 	ec2Reservation, err := CreateInstance(ec2client, ec2Params)
 	if err != nil {
@@ -105,11 +84,7 @@ func TestDestroyInstance(t *testing.T) {
 }
 
 func TestGetRunningInstances(t *testing.T) {
-	ec2client, err := CreateClient(region)
-	if err != nil {
-		t.Fatalf(
-			"error running CreateClient(): %v", err)
-	}
+	ec2client := CreateClient()
 
 	result, err := GetRunningInstances(ec2client)
 	for _, reservation := range result.Reservations {
@@ -125,11 +100,7 @@ func TestGetRunningInstances(t *testing.T) {
 }
 
 func TestGetInstancePublicIP(t *testing.T) {
-	ec2client, err := CreateClient(region)
-	if err != nil {
-		t.Fatalf(
-			"error running CreateClient(): %v", err)
-	}
+	ec2client := CreateClient()
 
 	ec2Reservation, err := CreateInstance(ec2client, ec2Params)
 	if err != nil {
@@ -163,19 +134,10 @@ func TestGetInstancePublicIP(t *testing.T) {
 }
 
 func TestGetRegion(t *testing.T) {
-	ec2client, err := CreateClient(region)
-	if err != nil {
-		t.Fatalf(
-			"error running CreateClient(): %v", err)
-	}
+	ec2client := CreateClient()
 
-	returnedRegion, err := GetRegion(ec2client)
+	_, err := GetRegion(ec2client)
 	if err != nil {
-		t.Fatalf(
-			"error running GetRegion(): %v", err)
-	}
-
-	if returnedRegion != region {
 		t.Fatalf(
 			"error running GetRegion(): %v", err)
 	}

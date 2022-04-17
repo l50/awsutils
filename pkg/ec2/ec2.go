@@ -23,23 +23,17 @@ type Params struct {
 	PublicIP         string
 }
 
-// CreateClient returns a new session that's
-// created in the input region.
-func CreateClient(region string) (*ec2.EC2, error) {
-	sess, err := session.NewSessionWithOptions(session.Options{
-		Config: aws.Config{
-			Region: aws.String(region),
-		},
-	})
-
-	if err != nil {
-		return nil, err
-	}
+// CreateClient returns a new ec2 session.
+func CreateClient() *ec2.EC2 {
+	sess := session.Must(session.NewSessionWithOptions(
+		session.Options{
+			SharedConfigState: session.SharedConfigEnable,
+		}))
 
 	// Create EC2 service client
 	svc := ec2.New(sess)
 
-	return svc, nil
+	return svc
 }
 
 // CreateInstance returns an ec2 reservation for an instance
