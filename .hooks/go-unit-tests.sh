@@ -1,8 +1,26 @@
 #!/bin/bash
-go test -v ./...
 
-returncode=$?
-if [ $returncode -ne 0 ]; then
+set -x
+
+TESTS_TO_RUN=$1
+RETURN_CODE=0
+
+if [[ -z "${TESTS_TO_RUN}" ]]; then
+  echo "No tests input"
+  echo "Example - Run all tests: bash go-unit-tests.sh all"
+  echo "Example - Run ec2 tests: bash go-unit-tests.sh ec2"
+  exit 1
+fi
+
+if [[ "${TESTS_TO_RUN}" == 'all' ]]; then
+  go test -v -count=1 -race ./...
+  RETURN_CODE=$?
+else
+  go test -v -count=1 -race "./.../${TESTS_TO_RUN}"
+  RETURN_CODE=$?
+fi
+
+if [[ "${RETURN_CODE}" -ne 0 ]]; then
   echo "unit tests failed"
   exit 1
 fi

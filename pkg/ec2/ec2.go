@@ -8,6 +8,15 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
+// Connection contains all of the relevant
+// information to maintain
+// an EC2 connection.
+type Connection struct {
+	Client      *ec2.EC2
+	Reservation *ec2.Reservation
+	Params      Params
+}
+
 // Params represents a particular EC2 instance
 type Params struct {
 	ImageID          string
@@ -23,8 +32,9 @@ type Params struct {
 	PublicIP         string
 }
 
-// CreateClient returns a new ec2 session.
-func CreateClient() *ec2.EC2 {
+// createClient is a helper function that
+// returns a new ec2 session.
+func createClient() *ec2.EC2 {
 	sess := session.Must(session.NewSessionWithOptions(
 		session.Options{
 			SharedConfigState: session.SharedConfigEnable,
@@ -34,6 +44,15 @@ func CreateClient() *ec2.EC2 {
 	svc := ec2.New(sess)
 
 	return svc
+}
+
+// CreateConnection creates a connection
+// with EC2 and returns a Connection.
+func CreateConnection() Connection {
+	ec2Connection := Connection{}
+	ec2Connection.Client = createClient()
+
+	return ec2Connection
 }
 
 // CreateInstance returns an ec2 reservation for an instance
@@ -155,7 +174,7 @@ func GetInstancePublicIP(client *ec2.EC2, instanceID string) (string, error) {
 	return *result.Reservations[0].Instances[0].NetworkInterfaces[0].Association.PublicIp, nil
 }
 
-// GetRegion returns the region associted with the input
+// GetRegion returns the region associated with the input
 // ec2 client.
 func GetRegion(client *ec2.EC2) (string, error) {
 	region := client.Config.Region
@@ -165,4 +184,10 @@ func GetRegion(client *ec2.EC2) (string, error) {
 	}
 
 	return *region, nil
+}
+
+// GetInstanceID returns the instance ID
+// from an input instanceReservation.
+func GetInstanceID(instanceReservation *ec2.Instance) string {
+	return *instanceReservation.InstanceId
 }
