@@ -2,6 +2,7 @@ package ec2
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"testing"
 
@@ -9,6 +10,7 @@ import (
 )
 
 var (
+	err           error
 	volumeSize, _ = utils.StringToInt64(os.Getenv("VOLUME_SIZE"))
 	ec2Params     = Params{
 		ImageID:          os.Getenv("AMI"),
@@ -20,79 +22,71 @@ var (
 		SubnetID:         os.Getenv("SUBNET_ID"),
 		VolumeSize:       volumeSize,
 	}
+	ec2Connection = Connection{}
 )
 
-func TestCreateInstance(t *testing.T) {
-	ec2client := CreateClient()
-
-	ec2Reservation, err := CreateInstance(ec2client, ec2Params)
+func init() {
+	ec2Connection.Client = createClient()
+	ec2Connection.Params = ec2Params
+	ec2Connection.Reservation, err = CreateInstance(
+		ec2Connection.Client,
+		ec2Connection.Params,
+	)
 	if err != nil {
-		t.Fatalf(
-			"error running CreateInstance(): %v", err)
+		log.Fatalf(
+			"error running CreateInstance(): %v",
+			err,
+		)
 	}
 
-	ec2Params.InstanceID = *ec2Reservation.Instances[0].InstanceId
+	ec2Connection.Params.InstanceID = GetInstanceID(
+		ec2Connection.Reservation.Instances[0],
+	)
+
+	log.Println(
+		"Waiting for test instance to finish initialization - please wait",
+	)
+
+	// Wait for instance to finish
+	// initialization.
+	err = WaitForInstance(
+		ec2Connection.Client,
+		ec2Connection.Params.InstanceID,
+	)
+	if err != nil {
+		log.Fatalf(
+			"error running WaitForInstance(): %v",
+			err,
+		)
+	}
+
 	fmt.Printf("Successfully created instance: %s\n", ec2Params.InstanceID)
-
-	err = DestroyInstance(ec2client, ec2Params.InstanceID)
-	if err != nil {
-		t.Fatalf(
-			"error running DestroyInstance(): %v", err)
-	}
 }
 
 func TestTagInstance(t *testing.T) {
-	ec2client := CreateClient()
+	err = TagInstance(
+		ec2Connection.Client,
+		ec2Connection.Params.InstanceID,
+		"Env",
+		"Prod",
+	)
 
-	ec2Reservation, err := CreateInstance(ec2client, ec2Params)
-	if err != nil {
-		t.Fatalf(
-			"error running CreateInstance(): %v", err)
-	}
-
-	ec2Params.InstanceID = *ec2Reservation.Instances[0].InstanceId
-
-	err = TagInstance(ec2client, ec2Params.InstanceID, "Env", "Prod")
 	if err != nil {
 		t.Fatalf(
 			"error running TagInstance(): %v", err)
 	}
-
-	err = DestroyInstance(ec2client, ec2Params.InstanceID)
-	if err != nil {
-		t.Fatalf(
-			"error running DestroyInstance(): %v", err)
-	}
-}
-
-func TestDestroyInstance(t *testing.T) {
-	ec2client := CreateClient()
-
-	ec2Reservation, err := CreateInstance(ec2client, ec2Params)
-	if err != nil {
-		t.Fatalf(
-			"error running CreateInstance(): %v", err)
-	}
-
-	ec2Params.InstanceID = *ec2Reservation.Instances[0].InstanceId
-
-	err = DestroyInstance(ec2client, ec2Params.InstanceID)
-	if err != nil {
-		t.Fatalf(
-			"error running DestroyInstance(): %v", err)
-	}
 }
 
 func TestGetRunningInstances(t *testing.T) {
-	ec2client := CreateClient()
-
-	result, err := GetRunningInstances(ec2client)
+	result, err := GetRunningInstances(
+		ec2Connection.Client)
 	for _, reservation := range result.Reservations {
+		log.Println("Running instance IDs:")
 		for _, instance := range reservation.Instances {
-			fmt.Printf("Instance ID for running instance: %v\n",
-				*instance.InstanceId)
+			fmt.Println(*instance.InstanceId)
 		}
 	}
+
 	if err != nil {
 		t.Fatalf(
 			"error running GetRunningInstance(): %v", err)
@@ -100,45 +94,45 @@ func TestGetRunningInstances(t *testing.T) {
 }
 
 func TestGetInstancePublicIP(t *testing.T) {
-	ec2client := CreateClient()
+	ec2Connection.Params.PublicIP, err =
+		GetInstancePublicIP(
+			ec2Connection.Client,
+			ec2Connection.Params.InstanceID,
+		)
 
-	ec2Reservation, err := CreateInstance(ec2client, ec2Params)
 	if err != nil {
 		t.Fatalf(
-			"error running CreateInstance(): %v", err)
+			"error running GetInstancePublicIP(): %v",
+			err,
+		)
 	}
 
-	ec2Params.InstanceID = *ec2Reservation.Instances[0].InstanceId
-
-	err = WaitForInstance(ec2client, ec2Params.InstanceID)
-	if err != nil {
-		t.Fatalf(
-			"error running WaitForInstance(): %v", err)
-	}
-
-	ec2Params.PublicIP, err = GetInstancePublicIP(ec2client,
-		ec2Params.InstanceID)
-	if err != nil {
-		t.Fatalf(
-			"error running GetInstancePublicIP(): %v", err)
-	}
-
-	fmt.Printf("Successfully grabbed public IP: %s\n",
-		ec2Params.PublicIP)
-
-	err = DestroyInstance(ec2client, ec2Params.InstanceID)
-	if err != nil {
-		t.Fatalf(
-			"error running DestroyInstance(): %v", err)
-	}
+	fmt.Printf(
+		"Successfully grabbed public IP: %s\n",
+		ec2Connection.Params.PublicIP)
 }
 
 func TestGetRegion(t *testing.T) {
-	ec2client := CreateClient()
-
-	_, err := GetRegion(ec2client)
+	_, err := GetRegion(ec2Connection.Client)
 	if err != nil {
 		t.Fatalf(
-			"error running GetRegion(): %v", err)
+			"error running GetRegion(): %v",
+			err,
+		)
 	}
+}
+
+func TestDestroyInstance(t *testing.T) {
+	t.Cleanup(func() {
+		err = DestroyInstance(
+			ec2Connection.Client,
+			ec2Connection.Params.InstanceID,
+		)
+		if err != nil {
+			t.Fatalf(
+				"error running DestroyInstance(): %v",
+				err,
+			)
+		}
+	})
 }

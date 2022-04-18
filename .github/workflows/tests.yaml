@@ -48,7 +48,7 @@ jobs:
 
       - name: Generate the coverage output
         run: |
-          go test -race -failfast -tags=integration -coverprofile=coverage-all.out ./...
+          go test -v -race -failfast -tags=integration -coverprofile=coverage-all.out ./...
 
       - name: Send the coverage output
         uses: shogo82148/actions-goveralls@v1

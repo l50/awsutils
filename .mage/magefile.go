@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,10 +19,6 @@ import (
 func init() {
 	os.Setenv("GO111MODULE", "on")
 }
-
-// Default is the function that will be run
-// if mage is called without any parameters.
-var Default = RunTests()
 
 // InstallDeps Installs go dependencies
 func InstallDeps() error {
@@ -96,12 +93,28 @@ func RunPreCommit() error {
 	return nil
 }
 
-// RunTests runs all of the unit tests
-func RunTests() error {
+// RunTests runs all tests by default. If a
+// directory that has tests is passed as a parameter:
+//
+// ```
+// # Example:
+// ./magefile runTests ec2
+// ```
+//
+// then it will only run those tests.
+func RunTests(ctx context.Context, testSuite string) error {
 	mg.Deps(InstallDeps)
 
-	fmt.Println(color.YellowString("Running unit tests."))
-	if err := sh.RunV(filepath.Join(".hooks", "go-unit-tests.sh")); err != nil {
+	// Default to run all tests
+	if testSuite == "" {
+		fmt.Println(color.YellowString("Running all unit tests."))
+		if err := sh.RunV(filepath.Join(".hooks", "go-unit-tests.sh"), "all"); err != nil {
+			return fmt.Errorf(color.RedString("failed to run unit tests: %v", err))
+		}
+	}
+
+	fmt.Printf(color.YellowString("Running %s unit tests.\n", testSuite))
+	if err := sh.RunV(filepath.Join(".hooks", "go-unit-tests.sh"), testSuite); err != nil {
 		return fmt.Errorf(color.RedString("failed to run unit tests: %v", err))
 	}
 
