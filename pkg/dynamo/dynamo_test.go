@@ -31,7 +31,7 @@ func init() {
 }
 
 func TestGetRegion(t *testing.T) {
-	_, err := GetRegion(dbConnection.Client)
+	_, err = GetRegion(dbConnection.Client)
 	if err != nil {
 		t.Fatalf(
 			"error running GetRegion(): %v",
@@ -55,11 +55,23 @@ func TestGetTables(t *testing.T) {
 }
 
 func TestCreateTable(t *testing.T) {
-	err := CreateTable(dbConnection)
+	err = CreateTable(dbConnection)
 	if err != nil {
 		t.Fatalf(
 			"error running CreateTable(): %v",
 			err,
 		)
 	}
+}
+
+func TestDestroyTable(t *testing.T) {
+	t.Cleanup(func() {
+		err = DestroyTable(dbConnection)
+		if err != nil {
+			t.Fatalf(
+				"error running DestroyTable(): %v",
+				err,
+			)
+		}
+	})
 }

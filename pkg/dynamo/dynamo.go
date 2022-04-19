@@ -118,3 +118,18 @@ func CreateTable(dynamoConnection Connection) error {
 
 	return nil
 }
+
+// DestroyTable destroys a table with the input
+// dynamoConnection.
+func DestroyTable(dynamoConnection Connection) error {
+	_, err :=
+		dynamoConnection.Client.DeleteTable(&dynamodb.DeleteTableInput{
+			TableName: aws.String(dynamoConnection.Params.TableName),
+		})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
