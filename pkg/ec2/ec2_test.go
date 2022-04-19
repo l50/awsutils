@@ -6,6 +6,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	utils "github.com/l50/goutils"
 )
 
@@ -81,8 +83,8 @@ func TestTagInstance(t *testing.T) {
 func TestGetRunningInstances(t *testing.T) {
 	result, err := GetRunningInstances(
 		ec2Connection.Client)
+	log.Println("Running instance IDs:")
 	for _, reservation := range result.Reservations {
-		log.Println("Running instance IDs:")
 		for _, instance := range reservation.Instances {
 			fmt.Println(*instance.InstanceId)
 		}
@@ -120,6 +122,45 @@ func TestGetRegion(t *testing.T) {
 			"error running GetRegion(): %v",
 			err,
 		)
+	}
+}
+
+func TestGetInstances(t *testing.T) {
+	// Test with no filters
+	instances, err := GetInstances(ec2Connection.Client, nil)
+	if err != nil {
+		t.Fatalf(
+			"error running GetInstances() with no filters: %v",
+			err,
+		)
+	}
+
+	log.Println("The following instances were found: ")
+	for _, instance := range instances {
+		fmt.Println(*instance.InstanceId)
+	}
+
+	// Test with filters
+	filters := []*ec2.Filter{
+		{
+			Name: aws.String("tag:Name"),
+			Values: []*string{
+				aws.String("goInstance"),
+			},
+		},
+	}
+
+	instances, err = GetInstances(ec2Connection.Client, filters)
+	if err != nil {
+		t.Fatalf(
+			"error running GetInstances() with filters: %v",
+			err,
+		)
+	}
+
+	log.Println("Using filters, the following instances were found: ")
+	for _, instance := range instances {
+		fmt.Println(*instance.InstanceId)
 	}
 }
 

@@ -192,3 +192,30 @@ func GetRegion(client *ec2.EC2) (string, error) {
 func GetInstanceID(instanceReservation *ec2.Instance) string {
 	return *instanceReservation.InstanceId
 }
+
+// GetInstances returns ec2 instances that the
+// input client has access to.
+// If no filters are provided, all ec2 instances will
+// be returned by default.
+func GetInstances(client *ec2.EC2, filters []*ec2.Filter) (
+	[]*ec2.Instance, error) {
+
+	instances := []*ec2.Instance{}
+
+	result, err := client.DescribeInstances(
+		&ec2.DescribeInstancesInput{
+			Filters: filters,
+		})
+
+	if err != nil {
+		return instances, err
+	}
+
+	// Get instances from reservations and add
+	// to the instances output.
+	for _, reservation := range result.Reservations {
+		instances = append(instances, reservation.Instances...)
+	}
+
+	return instances, nil
+}

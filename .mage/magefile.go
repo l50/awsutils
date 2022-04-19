@@ -107,10 +107,7 @@ func RunTests(ctx context.Context, testSuite string) error {
 
 	// Default to run all tests
 	if testSuite == "" {
-		fmt.Println(color.YellowString("Running all unit tests."))
-		if err := sh.RunV(filepath.Join(".hooks", "go-unit-tests.sh"), "all"); err != nil {
-			return fmt.Errorf(color.RedString("failed to run unit tests: %v", err))
-		}
+		testSuite = "all"
 	}
 
 	fmt.Printf(color.YellowString("Running %s unit tests.\n", testSuite))
