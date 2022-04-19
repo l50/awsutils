@@ -11,9 +11,10 @@ import (
 var (
 	err      error
 	dbParams = Params{
-		ID:       uuid.New(),
-		Created:  time.Now(),
-		Modified: time.Now(),
+		ID:        uuid.New(),
+		TableName: "testTable",
+		Created:   time.Now(),
+		Modified:  time.Now(),
 	}
 	dbConnection = Connection{}
 )
@@ -43,12 +44,22 @@ func TestGetTables(t *testing.T) {
 	result, err := GetTables(dbConnection.Client)
 	if err != nil {
 		t.Fatalf(
-			"error running ListTables(): %v",
+			"error running GetTables(): %v",
 			err,
 		)
 	}
 
 	for _, n := range result {
 		log.Println("Table: ", *n)
+	}
+}
+
+func TestCreateTable(t *testing.T) {
+	err := CreateTable(dbConnection)
+	if err != nil {
+		t.Fatalf(
+			"error running CreateTable(): %v",
+			err,
+		)
 	}
 }

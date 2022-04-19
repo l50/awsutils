@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/google/uuid"
@@ -20,9 +21,10 @@ type Connection struct {
 // Params provides parameter
 // options for a DynamoDB table.
 type Params struct {
-	ID       uuid.UUID
-	Created  time.Time
-	Modified time.Time
+	ID        uuid.UUID
+	TableName string
+	Created   time.Time
+	Modified  time.Time
 }
 
 // createClient is a helper function that
@@ -86,4 +88,33 @@ func GetTables(client *dynamodb.DynamoDB) ([]*string, error) {
 	}
 
 	return result.TableNames, nil
+}
+
+// CreateTable creates a table with the input
+// dynamoConnection.
+func CreateTable(dynamoConnection Connection) error {
+	_, err :=
+		dynamoConnection.Client.CreateTable(
+			&dynamodb.CreateTableInput{
+				AttributeDefinitions: []*dynamodb.AttributeDefinition{
+					{
+						AttributeName: aws.String("id"),
+						AttributeType: aws.String("S"),
+					},
+				},
+				KeySchema: []*dynamodb.KeySchemaElement{
+					{
+						AttributeName: aws.String("id"),
+						KeyType:       aws.String("HASH"),
+					},
+				},
+				TableName:   aws.String(dynamoConnection.Params.TableName),
+				BillingMode: aws.String("PAY_PER_REQUEST"),
+			})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
