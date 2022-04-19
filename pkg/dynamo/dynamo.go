@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/google/uuid"
@@ -62,8 +63,8 @@ func GetRegion(client *dynamodb.DynamoDB) (string, error) {
 	return *region, nil
 }
 
-// GetTables returns all dynamoDB tables the input client
-// has access to.
+// GetTables returns all dynamoDB tables that the
+// input client has access to.
 // Resource:
 // https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/dynamo-example-list-tables.html
 func GetTables(client *dynamodb.DynamoDB) ([]*string, error) {
@@ -92,9 +93,9 @@ func GetTables(client *dynamodb.DynamoDB) ([]*string, error) {
 
 // CreateTable creates a table with the input
 // dynamoConnection.
-func CreateTable(dynamoConnection Connection) error {
+func CreateTable(client *dynamodb.DynamoDB, tableName string) error {
 	_, err :=
-		dynamoConnection.Client.CreateTable(
+		client.CreateTable(
 			&dynamodb.CreateTableInput{
 				AttributeDefinitions: []*dynamodb.AttributeDefinition{
 					{
@@ -108,7 +109,7 @@ func CreateTable(dynamoConnection Connection) error {
 						KeyType:       aws.String("HASH"),
 					},
 				},
-				TableName:   aws.String(dynamoConnection.Params.TableName),
+				TableName:   aws.String(tableName),
 				BillingMode: aws.String("PAY_PER_REQUEST"),
 			})
 
@@ -119,12 +120,42 @@ func CreateTable(dynamoConnection Connection) error {
 	return nil
 }
 
-// DestroyTable destroys a table with the input
-// dynamoConnection.
-func DestroyTable(dynamoConnection Connection) error {
+// WaitForTable waits for the creation process of the
+// input table to finish.
+func WaitForTable(client *dynamodb.DynamoDB, tableName string) error {
+	ctx := aws.BackgroundContext()
+	w := request.Waiter{
+		Name:        "WaitUntilTableExists",
+		MaxAttempts: 18,
+		Delay:       request.ConstantWaiterDelay(5 * time.Second),
+		Acceptors: []request.WaiterAcceptor{
+			{
+				State:   request.SuccessWaiterState,
+				Matcher: request.PathWaiterMatch, Argument: "Table.TableStatus",
+				Expected: dynamodb.TableStatusActive,
+			},
+		},
+
+		NewRequest: func(opts []request.Option) (*request.Request, error) {
+			req, _ := client.DescribeTableRequest(
+				&dynamodb.DescribeTableInput{TableName: &tableName})
+			req.SetContext(ctx)
+			return req, nil
+		},
+	}
+
+	if err := w.WaitWithContext(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DestroyTable destroys the input table.
+func DestroyTable(client *dynamodb.DynamoDB, tableName string) error {
 	_, err :=
-		dynamoConnection.Client.DeleteTable(&dynamodb.DeleteTableInput{
-			TableName: aws.String(dynamoConnection.Params.TableName),
+		client.DeleteTable(&dynamodb.DeleteTableInput{
+			TableName: aws.String(tableName),
 		})
 
 	if err != nil {

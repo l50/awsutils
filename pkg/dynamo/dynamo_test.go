@@ -24,7 +24,31 @@ func init() {
 	dbConnection.Params = dbParams
 	if err != nil {
 		log.Fatalf(
-			"error running CreateInstance(): %v",
+			"error running CreateClient(): %v",
+			err,
+		)
+	}
+
+	err = CreateTable(dbConnection.Client,
+		dbConnection.Params.TableName)
+	if err != nil {
+		log.Fatalf(
+			"error running CreateTable(): %v",
+			err,
+		)
+	}
+
+	log.Println(
+		"Waiting for test table to finish initialization - please wait",
+	)
+
+	err = WaitForTable(
+		dbConnection.Client,
+		dbConnection.Params.TableName,
+	)
+	if err != nil {
+		log.Fatalf(
+			"error running WaitForTable(): %v",
 			err,
 		)
 	}
@@ -54,19 +78,10 @@ func TestGetTables(t *testing.T) {
 	}
 }
 
-func TestCreateTable(t *testing.T) {
-	err = CreateTable(dbConnection)
-	if err != nil {
-		t.Fatalf(
-			"error running CreateTable(): %v",
-			err,
-		)
-	}
-}
-
 func TestDestroyTable(t *testing.T) {
 	t.Cleanup(func() {
-		err = DestroyTable(dbConnection)
+		err = DestroyTable(dbConnection.Client,
+			dbConnection.Params.TableName)
 		if err != nil {
 			t.Fatalf(
 				"error running DestroyTable(): %v",

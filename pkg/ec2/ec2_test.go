@@ -60,7 +60,8 @@ func init() {
 		)
 	}
 
-	fmt.Printf("Successfully created instance: %s\n", ec2Params.InstanceID)
+	fmt.Printf("Successfully created instance: %s\n",
+		ec2Connection.Params.InstanceID)
 }
 
 func TestTagInstance(t *testing.T) {
