@@ -13,6 +13,7 @@ import (
 
 var (
 	err           error
+	verbose       = false
 	volumeSize, _ = utils.StringToInt64(os.Getenv("VOLUME_SIZE"))
 	ec2Params     = Params{
 		ImageID:          os.Getenv("AMI"),
@@ -135,9 +136,11 @@ func TestGetInstances(t *testing.T) {
 		)
 	}
 
-	log.Println("The following instances were found: ")
-	for _, instance := range instances {
-		fmt.Println(*instance.InstanceId)
+	if verbose {
+		log.Println("The following instances were found: ")
+		for _, instance := range instances {
+			fmt.Println(*instance.InstanceId)
+		}
 	}
 
 	// Test with filters
@@ -158,9 +161,11 @@ func TestGetInstances(t *testing.T) {
 		)
 	}
 
-	log.Println("Using filters, the following instances were found: ")
-	for _, instance := range instances {
-		fmt.Println(*instance.InstanceId)
+	if verbose {
+		log.Println("Using filters, the following instances were found: ")
+		for _, instance := range instances {
+			fmt.Println(*instance.InstanceId)
+		}
 	}
 }
 

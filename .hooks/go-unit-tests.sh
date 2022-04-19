@@ -12,7 +12,16 @@ if [[ -z "${TESTS_TO_RUN}" ]]; then
   exit 1
 fi
 
-if [[ "${TESTS_TO_RUN}" == 'all' ]]; then
+# If we are in an action, run the coverage test.
+if [[ "${GITHUB_ACTIONS}" == "true" ]]; then
+  TESTS_TO_RUN='coverage'
+fi
+
+if [[ "${TESTS_TO_RUN}" == 'coverage' ]]; then
+  go test -v -race -failfast \
+    -tags=integration -coverprofile=coverage-all.out ./...
+  RETURN_CODE=$?
+elif [[ "${TESTS_TO_RUN}" == 'all' ]]; then
   go test -v -count=1 -race ./...
   RETURN_CODE=$?
 else

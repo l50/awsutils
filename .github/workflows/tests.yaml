@@ -46,10 +46,6 @@ jobs:
       - name: Run pre-commit
         uses: pre-commit/action@v2.0.3
 
-      - name: Generate the coverage output
-        run: |
-          go test -v -race -failfast -tags=integration -coverprofile=coverage-all.out ./...
-
       - name: Send the coverage output
         uses: shogo82148/actions-goveralls@v1
         with:

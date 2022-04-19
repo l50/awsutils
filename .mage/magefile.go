@@ -105,7 +105,6 @@ func RunPreCommit() error {
 func RunTests(ctx context.Context, testSuite string) error {
 	mg.Deps(InstallDeps)
 
-	// Default to run all tests
 	if testSuite == "" {
 		testSuite = "all"
 	}
