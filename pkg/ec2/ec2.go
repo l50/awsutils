@@ -20,17 +20,18 @@ type Connection struct {
 // Params provides parameter
 // options for an EC2 instance.
 type Params struct {
-	ImageID          string
-	InstanceType     string
-	MinCount         int
-	MaxCount         int
-	SecurityGroupIDs []string
-	KeyName          string
-	SubnetID         string
-	VolumeSize       int64
-	InstanceID       string
-	InstanceName     string
-	PublicIP         string
+	AssociatePublicIPAddress bool
+	ImageID                  string
+	InstanceType             string
+	MinCount                 int
+	MaxCount                 int
+	SecurityGroupIDs         []string
+	KeyName                  string
+	SubnetID                 string
+	VolumeSize               int64
+	InstanceID               string
+	InstanceName             string
+	PublicIP                 string
 }
 
 // createClient is a helper function that
@@ -68,14 +69,20 @@ func CreateInstance(client *ec2.EC2, ec2Params Params) (*ec2.Reservation, error)
 				},
 			},
 		},
-		ImageId:          aws.String(ec2Params.ImageID),
-		InstanceType:     aws.String(ec2Params.InstanceType),
-		MinCount:         aws.Int64(int64(ec2Params.MinCount)),
-		MaxCount:         aws.Int64(int64(ec2Params.MaxCount)),
-		SecurityGroupIds: aws.StringSlice(ec2Params.SecurityGroupIDs),
+		ImageId:      aws.String(ec2Params.ImageID),
+		InstanceType: aws.String(ec2Params.InstanceType),
+		MinCount:     aws.Int64(int64(ec2Params.MinCount)),
+		MaxCount:     aws.Int64(int64(ec2Params.MaxCount)),
 		// Omitted in favor of enforcing use of SSM.
 		// KeyName:    aws.String(ec2Params.KeyName),
-		SubnetId: aws.String(ec2Params.SubnetID),
+		NetworkInterfaces: []*ec2.InstanceNetworkInterfaceSpecification{
+			{
+				AssociatePublicIpAddress: aws.Bool(ec2Params.AssociatePublicIPAddress),
+				DeviceIndex:              aws.Int64(int64(0)),
+				SubnetId:                 aws.String(ec2Params.SubnetID),
+				Groups:                   aws.StringSlice(ec2Params.SecurityGroupIDs),
+			},
+		},
 		TagSpecifications: []*ec2.TagSpecification{
 			{
 				ResourceType: aws.String("instance"),
@@ -164,6 +171,11 @@ func WaitForInstance(client *ec2.EC2, instanceID string) error {
 // GetInstancePublicIP returns the public IP address
 // of the input instanceID.
 func GetInstancePublicIP(client *ec2.EC2, instanceID string) (string, error) {
+	// Make sure instance is initialized or this will fail
+	if err := WaitForInstance(client, instanceID); err != nil {
+		return "", err
+	}
+
 	result, err := client.DescribeInstances(&ec2.DescribeInstancesInput{
 		InstanceIds: []*string{&instanceID},
 	})

@@ -24,6 +24,9 @@ if [[ "${TESTS_TO_RUN}" == 'coverage' ]]; then
 elif [[ "${TESTS_TO_RUN}" == 'all' ]]; then
   go test -v -count=1 -race ./...
   RETURN_CODE=$?
+elif [[ "${TESTS_TO_RUN}" == 'short' ]]; then
+  go test -v -count=1 -short -race ./...
+  RETURN_CODE=$?
 else
   go test -v -count=1 -race "./.../${TESTS_TO_RUN}"
   RETURN_CODE=$?

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -15,15 +16,17 @@ var (
 	err           error
 	verbose       = false
 	volumeSize, _ = utils.StringToInt64(os.Getenv("VOLUME_SIZE"))
+	getPubIP, _   = strconv.ParseBool(os.Getenv("PUB_IP"))
 	ec2Params     = Params{
-		ImageID:          os.Getenv("AMI"),
-		InstanceName:     os.Getenv("INST_NAME"),
-		InstanceType:     os.Getenv("INST_TYPE"),
-		MinCount:         1,
-		MaxCount:         1,
-		SecurityGroupIDs: []string{os.Getenv("SEC_GRP_ID")},
-		SubnetID:         os.Getenv("SUBNET_ID"),
-		VolumeSize:       volumeSize,
+		AssociatePublicIPAddress: getPubIP,
+		ImageID:                  os.Getenv("AMI"),
+		InstanceName:             os.Getenv("INST_NAME"),
+		InstanceType:             os.Getenv("INST_TYPE"),
+		MinCount:                 1,
+		MaxCount:                 1,
+		SecurityGroupIDs:         []string{os.Getenv("SEC_GRP_ID")},
+		SubnetID:                 os.Getenv("SUBNET_ID"),
+		VolumeSize:               volumeSize,
 	}
 	ec2Connection = Connection{}
 )
@@ -45,23 +48,6 @@ func init() {
 	ec2Connection.Params.InstanceID = GetInstanceID(
 		ec2Connection.Reservation.Instances[0],
 	)
-
-	log.Println(
-		"Waiting for test instance to finish initialization - please wait",
-	)
-
-	// Wait for instance to finish
-	// initialization.
-	err = WaitForInstance(
-		ec2Connection.Client,
-		ec2Connection.Params.InstanceID,
-	)
-	if err != nil {
-		log.Fatalf(
-			"error running WaitForInstance(): %v",
-			err,
-		)
-	}
 
 	fmt.Printf("Successfully created instance: %s\n",
 		ec2Connection.Params.InstanceID)
@@ -97,7 +83,32 @@ func TestGetRunningInstances(t *testing.T) {
 	}
 }
 
+func TestWaitingForInstance(t *testing.T) {
+	// Skip test if running with
+	// go test -short
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	err = WaitForInstance(
+		ec2Connection.Client,
+		ec2Connection.Params.InstanceID,
+	)
+	if err != nil {
+		t.Fatalf(
+			"error running WaitForInstance(): %v",
+			err,
+		)
+	}
+}
+
 func TestGetInstancePublicIP(t *testing.T) {
+	// Skip test if running with
+	// go test -short
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	ec2Connection.Params.PublicIP, err =
 		GetInstancePublicIP(
 			ec2Connection.Client,
