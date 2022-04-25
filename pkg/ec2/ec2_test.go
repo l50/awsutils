@@ -103,12 +103,6 @@ func TestWaitingForInstance(t *testing.T) {
 }
 
 func TestGetInstancePublicIP(t *testing.T) {
-	// Skip test if running with
-	// go test -short
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
-
 	ec2Connection.Params.PublicIP, err =
 		GetInstancePublicIP(
 			ec2Connection.Client,

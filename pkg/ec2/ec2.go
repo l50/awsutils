@@ -171,20 +171,19 @@ func WaitForInstance(client *ec2.EC2, instanceID string) error {
 // GetInstancePublicIP returns the public IP address
 // of the input instanceID.
 func GetInstancePublicIP(client *ec2.EC2, instanceID string) (string, error) {
-	// Make sure instance is initialized or this will fail
-	if err := WaitForInstance(client, instanceID); err != nil {
-		return "", err
-	}
-
 	result, err := client.DescribeInstances(&ec2.DescribeInstancesInput{
-		InstanceIds: []*string{&instanceID},
+		InstanceIds: []*string{aws.String(instanceID)},
 	})
 
 	if err != nil {
 		return "", err
 	}
 
-	return *result.Reservations[0].Instances[0].NetworkInterfaces[0].Association.PublicIp, nil
+	return *result.Reservations[0].
+		Instances[0].
+		NetworkInterfaces[0].
+		Association.
+		PublicIp, nil
 }
 
 // GetRegion returns the region associated with the input
