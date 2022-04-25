@@ -174,6 +174,25 @@ func TestGetInstances(t *testing.T) {
 	}
 }
 
+func TestGetInstanceState(t *testing.T) {
+	state, err :=
+		GetInstanceState(
+			ec2Connection.Client,
+			ec2Connection.Params.InstanceID,
+		)
+
+	if err != nil {
+		t.Fatalf(
+			"error running GetInstanceState(): %v",
+			err,
+		)
+	}
+
+	fmt.Printf(
+		"Successfully grabbed instance state: %s\n",
+		state)
+}
+
 func TestDestroyInstance(t *testing.T) {
 	t.Cleanup(func() {
 		err = DestroyInstance(

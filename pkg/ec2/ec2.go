@@ -230,3 +230,20 @@ func GetInstances(client *ec2.EC2, filters []*ec2.Filter) (
 
 	return instances, nil
 }
+
+// GetInstanceState returns the state of the ec2
+// instance associated with the input instanceID.
+func GetInstanceState(client *ec2.EC2, instanceID string) (string, error) {
+	result, err := client.DescribeInstances(
+		&ec2.DescribeInstancesInput{
+			InstanceIds: []*string{aws.String(instanceID)},
+		})
+
+	if err != nil {
+		return "", err
+	}
+
+	return *result.Reservations[0].
+		Instances[0].
+		State.Name, nil
+}
