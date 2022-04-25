@@ -7,10 +7,11 @@
       "request": "launch",
       "mode": "auto",
       "program": ".mage/mage_output_file.go",
-      "buildFlags": ".mage/magefile.go",
+      "buildFlags": "magefile.go",
       "preLaunchTask": "create mage_output_file.go",
       "postDebugTask": "delete mage_output_file.go",
-      "showLog": true
+      "showLog": true,
+      "envFile": "${workspaceFolder}/pkg/ec2/test_env.sensitive"
     }
   ]
 }
