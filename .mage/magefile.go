@@ -97,8 +97,11 @@ func RunPreCommit() error {
 // directory that has tests is passed as a parameter:
 //
 // ```
-// # Example:
+// # Example 1 - Run all EC2 tests
 // ./magefile runTests ec2
+//
+// # Example 2 - Run all short tests
+// ./magefile runTests short
 // ```
 //
 // then it will only run those tests.
