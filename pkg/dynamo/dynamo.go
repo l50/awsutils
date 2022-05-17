@@ -43,7 +43,7 @@ func createClient() *dynamodb.DynamoDB {
 }
 
 // CreateConnection creates a connection
-// with DynamoDB and returns a Connection.
+// with DynamoDB and returns it.
 func CreateConnection() Connection {
 	dynamoConnection := Connection{}
 	dynamoConnection.Client = createClient()

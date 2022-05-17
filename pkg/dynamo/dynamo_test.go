@@ -19,14 +19,16 @@ var (
 		Modified:  time.Now(),
 	}
 	dbConnection = Connection{}
+	verbose      bool
 )
 
 func init() {
+	verbose = false
 	dbConnection.Client = createClient()
 	dbConnection.Params = dbParams
 	if err != nil {
 		log.Fatalf(
-			"error running CreateClient(): %v",
+			"error running createClient(): %v",
 			err,
 		)
 	}
@@ -75,8 +77,10 @@ func TestGetTables(t *testing.T) {
 		)
 	}
 
-	for _, n := range result {
-		log.Println("Table: ", *n)
+	if verbose {
+		for _, n := range result {
+			log.Println("Table: ", *n)
+		}
 	}
 }
 
