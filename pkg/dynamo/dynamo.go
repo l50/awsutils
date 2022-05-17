@@ -92,7 +92,7 @@ func GetTables(client *dynamodb.DynamoDB) ([]*string, error) {
 }
 
 // CreateTable creates a table with the input
-// dynamoConnection.
+// `tableName`.
 func CreateTable(client *dynamodb.DynamoDB, tableName string) error {
 	_, err :=
 		client.CreateTable(
