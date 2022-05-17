@@ -22,8 +22,7 @@ var (
 
 func init() {
 	verbose = false
-	s3Connection.Client = createClient()
-	s3Connection.Params = s3Params
+	s3Connection.Client, s3Connection.Session = createClient()
 	if err != nil {
 		log.Fatalf(
 			"error running createClient(): %v",
@@ -32,26 +31,10 @@ func init() {
 	}
 
 	err = CreateBucket(s3Connection.Client,
-		s3Connection.Params.BucketName)
+		randStr)
 	if err != nil {
 		log.Fatalf(
 			"error running CreateBucket(): %v",
-			err,
-		)
-	}
-
-	log.Println(
-		"Waiting for test bucket to finish " +
-			"initialization - please wait",
-	)
-
-	err = WaitForBucket(
-		s3Connection.Client,
-		s3Connection.Params.BucketName,
-	)
-	if err != nil {
-		log.Fatalf(
-			"error running WaitForBucket(): %v",
 			err,
 		)
 	}
@@ -72,10 +55,43 @@ func TestGetBuckets(t *testing.T) {
 	}
 }
 
+func TestDownloadBucketFile(t *testing.T) {
+	file := "testFile"
+	if utils.CreateEmptyFile(file) {
+		err := UploadBucketFile(s3Connection.Session, randStr, file)
+		if err != nil {
+			t.Fatalf(
+				"error uploading %s to %s: %v",
+				file,
+				randStr,
+				err,
+			)
+		}
+	}
+
+	err = DownloadBucketFile(s3Connection.Session, randStr, file)
+	if err != nil {
+		t.Fatalf(
+			"error downloading %s from %s: %v",
+			file,
+			randStr,
+			err,
+		)
+	}
+}
+
 func TestDestroyBucket(t *testing.T) {
 	t.Cleanup(func() {
+		err = EmptyBucket(s3Connection.Client, s3Params.BucketName)
+		if err != nil {
+			t.Fatalf(
+				"error running EmptyBucket(): %v",
+				err,
+			)
+		}
+
 		err = DestroyBucket(s3Connection.Client,
-			s3Connection.Params.BucketName)
+			s3Params.BucketName)
 		if err != nil {
 			t.Fatalf(
 				"error running DestroyBucket(): %v",
