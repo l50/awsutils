@@ -1,4 +1,5 @@
 export AMI=TODO
+export PUB_IP=true
 export INST_NAME=TODO
 export INST_TYPE=t2.micro
 export SEC_GRP_ID=TODO

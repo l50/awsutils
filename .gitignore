@@ -10,3 +10,4 @@ magefile
 
 # VSCode
 *debug_bin*
+.vscode/settings.json

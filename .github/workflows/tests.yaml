@@ -11,7 +11,8 @@ env:
   INST_TYPE: t2.micro
   SEC_GRP_ID: ${{ secrets.SEC_GRP_ID }}
   SUBNET_ID: ${{ secrets.SUBNET_ID }}
-  VOLUME_SIZE: ${{ secrets.VOLUME_SIZE }}
+  VOLUME_SIZE: 100
+  PUB_IP: true
   AWS_DEFAULT_REGION: us-west-1
 
 jobs:
@@ -45,6 +46,10 @@ jobs:
 
       - name: Run pre-commit
         uses: pre-commit/action@v2.0.3
+
+      - name: Generate the coverage output
+        run: |
+          bash .hooks/go-unit-tests.sh coverage
 
       - name: Send the coverage output
         uses: shogo82148/actions-goveralls@v1

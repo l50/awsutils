@@ -8,13 +8,8 @@ RETURN_CODE=0
 if [[ -z "${TESTS_TO_RUN}" ]]; then
   echo "No tests input"
   echo "Example - Run all tests: bash go-unit-tests.sh all"
-  echo "Example - Run ec2 tests: bash go-unit-tests.sh ec2"
+  echo "Example - Run all tests and generate coverage report: bash go-unit-tests.sh coverage"
   exit 1
-fi
-
-# If we are in an action, run the coverage test.
-if [[ "${GITHUB_ACTIONS}" == "true" ]]; then
-  TESTS_TO_RUN='coverage'
 fi
 
 if [[ "${TESTS_TO_RUN}" == 'coverage' ]]; then
@@ -24,12 +19,15 @@ if [[ "${TESTS_TO_RUN}" == 'coverage' ]]; then
 elif [[ "${TESTS_TO_RUN}" == 'all' ]]; then
   go test -v -count=1 -race ./...
   RETURN_CODE=$?
-elif [[ "${TESTS_TO_RUN}" == 'short' ]]; then
+elif [[ "${TESTS_TO_RUN}" == 'short' ]] && \
+     [[ "${GITHUB_ACTIONS}" != "true" ]]; then
   go test -v -count=1 -short -race ./...
   RETURN_CODE=$?
 else
-  go test -v -count=1 -race "./.../${TESTS_TO_RUN}"
-  RETURN_CODE=$?
+  if [[ "${GITHUB_ACTIONS}" != 'true' ]]; then
+    go test -v -count=1 -race "./.../${TESTS_TO_RUN}"
+    RETURN_CODE=$?
+  fi
 fi
 
 if [[ "${RETURN_CODE}" -ne 0 ]]; then
