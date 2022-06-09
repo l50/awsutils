@@ -32,6 +32,7 @@ type Params struct {
 	InstanceID               string
 	InstanceName             string
 	PublicIP                 string
+	IamInstanceProfile	 string
 }
 
 // createClient is a helper function that
@@ -69,6 +70,7 @@ func CreateInstance(client *ec2.EC2, ec2Params Params) (*ec2.Reservation, error)
 				},
 			},
 		},
+		IamInstanceProfile: aws.String(ec2Params.IamInstanceProfile),
 		ImageId:      aws.String(ec2Params.ImageID),
 		InstanceType: aws.String(ec2Params.InstanceType),
 		MinCount:     aws.Int64(int64(ec2Params.MinCount)),
