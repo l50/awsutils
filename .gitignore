@@ -14,3 +14,4 @@ magefile
 
 # Test Artifacts
 testFile
+pkg/ec2/test_env
