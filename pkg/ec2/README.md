@@ -14,4 +14,5 @@ then source the file to add the environment variables to your shell:
 source test_env
 ```
 
-Note that your `test_env` file is gitignored.
+**Note:** `test_env` is captured in the repo's `.gitignore`, 
+so you don't need to worry about accidentally committing secrets.
