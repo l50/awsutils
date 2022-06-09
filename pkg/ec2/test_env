@@ -1,7 +1,8 @@
-export AMI=TODO
+export AMI=ami-0ca285d4c2cda3300
 export PUB_IP=true
-export INST_NAME=TODO
-export INST_TYPE=t2.micro
-export SEC_GRP_ID=TODO
-export SUBNET_ID=TODO
+export INST_NAME=awutils-ec2-test
+export INST_PROFILE=instance-deployer-workloads-default-instance-profile
+export INST_TYPE=t3.micro
+export SEC_GRP_ID=sg-02ad6f282d58c0bd9
+export SUBNET_ID=subnet-0ee8e828a3ea7d05f
 export VOLUME_SIZE=100
