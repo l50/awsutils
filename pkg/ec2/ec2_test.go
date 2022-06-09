@@ -22,6 +22,7 @@ var (
 		ImageID:                  os.Getenv("AMI"),
 		InstanceName:             os.Getenv("INST_NAME"),
 		InstanceType:             os.Getenv("INST_TYPE"),
+		InstanceProfile:          os.Getenv("INST_PROFILE"),
 		MinCount:                 1,
 		MaxCount:                 1,
 		SecurityGroupIDs:         []string{os.Getenv("SEC_GRP_ID")},
