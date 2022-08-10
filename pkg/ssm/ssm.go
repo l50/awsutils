@@ -47,13 +47,32 @@ func CreateConnection() Connection {
 	return ssmConnection
 }
 
-// PutParam creates a parameter in SSM
+// DeleteParam deletes a parameter in SSM
 // Inputs:
 //     svc is an Amazon SSM service client
 //     name is the name of the parameter
 // Output:
 //     If success, information about the parameter and nil
-//     Otherwise, nil and an error from the call to GetParam
+//     Otherwise, nil and an error from the call to DeleteParam
+func DeleteParam(svc ssmiface.SSMAPI, name *string) (*ssm.DeleteParameterOutput, error) {
+	results, err := svc.DeleteParameter(&ssm.DeleteParameterInput{
+		Name: name,
+	})
+
+	return results, err
+}
+
+// PutParam creates a parameter in SSM
+// Inputs:
+//     svc is an Amazon SSM service client
+//     name is the name of the parameter
+//     value is the value of the parameter
+//     type is the type of parameter
+//     overwrite sets the flag to rewrite
+//     a parameter value
+// Output:
+//     If success, information about the parameter and nil
+//     Otherwise, nil and an error from the call to PutParam
 func PutParam(svc ssmiface.SSMAPI, name *string, value *string, paramType *string, overwrite *bool) (*ssm.PutParameterOutput, error) {
 	results, err := svc.PutParameter(&ssm.PutParameterInput{
 		Name:      name,
@@ -73,7 +92,7 @@ func PutParam(svc ssmiface.SSMAPI, name *string, value *string, paramType *strin
 //     paramType is the type of parameter
 // Output:
 //     If success, information about the parameter and nil
-//     Otherwise, nil and an error from the call to PutParam
+//     Otherwise, nil and an error from the call to GetParam
 func GetParam(svc ssmiface.SSMAPI, name *string) (*ssm.GetParameterOutput, error) {
 	results, err := svc.GetParameter(&ssm.GetParameterInput{
 		Name: name,

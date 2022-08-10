@@ -49,3 +49,13 @@ func TestGetParam(t *testing.T) {
 	}
 	fmt.Println(*result.Parameter.Value)
 }
+
+func TestDeleteParam(t *testing.T) {
+	_, err := DeleteParam(ssmConnection.Client, &ssmParams.Name)
+	if err != nil {
+		t.Fatalf(
+			"error running GetParam(): %v",
+			err,
+		)
+	}
+}
