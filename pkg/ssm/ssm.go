@@ -1,6 +1,7 @@
 package ssm
 
 import (
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
@@ -10,7 +11,7 @@ import (
 // information to maintain
 // an SSM connection.
 type Connection struct {
-	Client  *ssm.SSM
+	Client  ssmiface.SSMAPI
 	Session *session.Session
 	Param   Param
 }
@@ -26,7 +27,7 @@ type Param struct {
 
 // createClient is a helper function that
 // returns a new ssm session.
-func createClient() (*ssm.SSM, *session.Session) {
+func createClient() (ssmiface.SSMAPI, *session.Session) {
 	sess := session.Must(session.NewSessionWithOptions(
 		session.Options{
 			SharedConfigState: session.SharedConfigEnable,
@@ -54,12 +55,12 @@ func CreateConnection() Connection {
 // Output:
 //     If success, information about the parameter and nil
 //     Otherwise, nil and an error from the call to DeleteParam
-func DeleteParam(svc ssmiface.SSMAPI, name *string) (*ssm.DeleteParameterOutput, error) {
-	results, err := svc.DeleteParameter(&ssm.DeleteParameterInput{
-		Name: name,
+func DeleteParam(svc ssmiface.SSMAPI, name string) error {
+	_, err := svc.DeleteParameter(&ssm.DeleteParameterInput{
+		Name: aws.String(name),
 	})
 
-	return results, err
+	return err
 }
 
 // PutParam creates a parameter in SSM
@@ -73,15 +74,15 @@ func DeleteParam(svc ssmiface.SSMAPI, name *string) (*ssm.DeleteParameterOutput,
 // Output:
 //     If success, information about the parameter and nil
 //     Otherwise, nil and an error from the call to PutParam
-func PutParam(svc ssmiface.SSMAPI, name *string, value *string, paramType *string, overwrite *bool) (*ssm.PutParameterOutput, error) {
-	results, err := svc.PutParameter(&ssm.PutParameterInput{
-		Name:      name,
-		Value:     value,
-		Type:      paramType,
-		Overwrite: overwrite,
+func PutParam(svc ssmiface.SSMAPI, name string, value string, paramType string, overwrite bool) error {
+	_, err := svc.PutParameter(&ssm.PutParameterInput{
+		Name:      aws.String(name),
+		Value:     aws.String(value),
+		Type:      aws.String(paramType),
+		Overwrite: aws.Bool(overwrite),
 	})
 
-	return results, err
+	return err
 }
 
 // GetParam fetches details of a parameter in SSM
@@ -93,10 +94,14 @@ func PutParam(svc ssmiface.SSMAPI, name *string, value *string, paramType *strin
 // Output:
 //     If success, information about the parameter and nil
 //     Otherwise, nil and an error from the call to GetParam
-func GetParam(svc ssmiface.SSMAPI, name *string) (*ssm.GetParameterOutput, error) {
+func GetParam(svc ssmiface.SSMAPI, name string) (string, error) {
 	results, err := svc.GetParameter(&ssm.GetParameterInput{
-		Name: name,
+		Name: aws.String(name),
 	})
 
-	return results, err
+	if err != nil {
+		return "", err
+	}
+
+	return *results.Parameter.Value, err
 }

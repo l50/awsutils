@@ -28,9 +28,9 @@ func init() {
 		)
 	}
 
-	_, err := PutParam(ssmConnection.Client,
-		&ssmParams.Name, &ssmParams.Value,
-		&ssmParams.Type, &ssmParams.Overwrite)
+	err := PutParam(ssmConnection.Client,
+		ssmParams.Name, ssmParams.Value,
+		ssmParams.Type, ssmParams.Overwrite)
 	if err != nil {
 		log.Fatalf(
 			"error running CreateSSMParam(): %v",
@@ -40,18 +40,18 @@ func init() {
 }
 func TestGetParam(t *testing.T) {
 	result, err := GetParam(ssmConnection.Client,
-		&ssmParams.Name)
+		ssmParams.Name)
 	if err != nil {
 		t.Fatalf(
 			"error running GetParam(): %v",
 			err,
 		)
 	}
-	fmt.Println(*result.Parameter.Value)
+	fmt.Println(result)
 }
 
 func TestDeleteParam(t *testing.T) {
-	_, err := DeleteParam(ssmConnection.Client, &ssmParams.Name)
+	err := DeleteParam(ssmConnection.Client, ssmParams.Name)
 	if err != nil {
 		t.Fatalf(
 			"error running GetParam(): %v",
