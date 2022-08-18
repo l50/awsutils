@@ -3,14 +3,20 @@ package secretsmanager
 import (
 	"log"
 	"testing"
+	"time"
+
+	utils "github.com/l50/goutils"
 )
 
 var (
-	err      error
-	smParams = Params{
-		Name:        "TestSecret",
+	err        error
+	randStr, _ = utils.RandomString(10)
+	smParams   = Params{
+		Name:        randStr,
 		Description: "Test Secret",
 		Value:       "123456",
+		Created:     time.Now(),
+		Modified:    time.Now(),
 	}
 	smConnection = Connection{}
 	verbose      bool
@@ -36,6 +42,18 @@ func init() {
 		)
 	}
 }
+
+func TestGetSecret(t *testing.T) {
+	_, err := GetSecret(smConnection.Client,
+		smParams.Name)
+	if err != nil {
+		t.Fatalf(
+			"error running GetSecret(): %v",
+			err,
+		)
+	}
+}
+
 func TestDeleteSecret(t *testing.T) {
 	err := DeleteSecret(smConnection.Client,
 		smParams.Name, true)

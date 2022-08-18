@@ -125,3 +125,33 @@ func DeleteSecret(client *secretsmanager.SecretsManager, secretName string, forc
 
 	return nil
 }
+
+// GetSecret returns the value of an input `secretName`.
+func GetSecret(client *secretsmanager.SecretsManager, secretName string) (string, error) {
+	secret, err := client.GetSecretValue(&secretsmanager.GetSecretValueInput{
+		SecretId: aws.String(secretName),
+	})
+
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case secretsmanager.ErrCodeResourceNotFoundException:
+				return "", errors.New(secretsmanager.ErrCodeResourceNotFoundException)
+			case secretsmanager.ErrCodeInvalidParameterException:
+				return "", errors.New(secretsmanager.ErrCodeInvalidParameterException)
+			case secretsmanager.ErrCodeInvalidRequestException:
+				return "", errors.New(secretsmanager.ErrCodeInvalidRequestException)
+			case secretsmanager.ErrCodeDecryptionFailure:
+				return "", errors.New(secretsmanager.ErrCodeDecryptionFailure)
+			case secretsmanager.ErrCodeInternalServiceError:
+				return "", errors.New(secretsmanager.ErrCodeInternalServiceError)
+			default:
+				return "", aerr
+			}
+		} else {
+			return "", err
+		}
+	}
+
+	return *secret.SecretString, nil
+}
