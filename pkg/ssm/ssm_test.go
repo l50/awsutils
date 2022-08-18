@@ -59,3 +59,21 @@ func TestDeleteParam(t *testing.T) {
 		)
 	}
 }
+
+// TODO: create an instance as part of this test
+// so that we can run this test.
+// func TestRunCommand(t *testing.T) {
+// 	instanceID := "TODO"
+// 	command := []string{
+// 		"whoami",
+// 	}
+
+// 	result, err := RunCommand(ssmConnection.Client, instanceID, command)
+// 	if err != nil {
+// 		t.Fatalf(
+// 			"error running RunCommand(): %v",
+// 			err,
+// 		)
+// 	}
+// fmt.Println(result)
+// }

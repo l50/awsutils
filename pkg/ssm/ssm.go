@@ -1,6 +1,9 @@
 package ssm
 
 import (
+	"errors"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
@@ -95,6 +98,7 @@ func PutParam(svc ssmiface.SSMAPI, name string, value string, paramType string, 
 //     If success, information about the parameter and nil
 //     Otherwise, nil and an error from the call to GetParam
 func GetParam(svc ssmiface.SSMAPI, name string) (string, error) {
+
 	results, err := svc.GetParameter(&ssm.GetParameterInput{
 		Name: aws.String(name),
 	})
@@ -104,4 +108,55 @@ func GetParam(svc ssmiface.SSMAPI, name string) (string, error) {
 	}
 
 	return *results.Parameter.Value, err
+}
+
+// RunCommand runs an input command using SSM.
+// Inputs:
+//     svc is an Amazon SSM service client
+//     instanceID is the instance to run the command on
+//     command is the command to run
+// Output:
+//     If successful, the command output and nil will be returned.
+func RunCommand(svc ssmiface.SSMAPI, instanceID string, command []string) (string, error) {
+	params := map[string][]*string{"commands": aws.StringSlice(command)}
+	docName := "AWS-RunShellScript"
+
+	cmdInput := &ssm.SendCommandInput{
+		InstanceIds:  aws.StringSlice([]string{instanceID}),
+		DocumentName: aws.String(docName),
+		Parameters:   params,
+	}
+
+	inputResult, err := svc.SendCommand(cmdInput)
+	if err != nil {
+		return "", err
+	}
+
+	commandID := *inputResult.Command.CommandId
+
+	// Get output and check it for ten iterations
+	var i int
+	for start := time.Now(); ; {
+		if i%10 == 0 {
+			if time.Since(start) > time.Second {
+				break
+			}
+		}
+
+		output, _ := svc.GetCommandInvocation(&ssm.GetCommandInvocationInput{
+			CommandId:  aws.String(commandID),
+			InstanceId: aws.String(instanceID),
+		})
+
+		// Return command output if it's available
+		if output.Status != nil {
+			if *output.StandardOutputContent != "" {
+				return *output.StandardOutputContent, nil
+			}
+		}
+
+		i++
+	}
+
+	return "", errors.New("failed to run command")
 }
