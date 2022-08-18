@@ -54,7 +54,7 @@ func TestDeleteParam(t *testing.T) {
 	err := DeleteParam(ssmConnection.Client, ssmParams.Name)
 	if err != nil {
 		t.Fatalf(
-			"error running GetParam(): %v",
+			"error running DeleteParam(): %v",
 			err,
 		)
 	}
