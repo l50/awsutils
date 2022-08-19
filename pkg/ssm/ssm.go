@@ -2,6 +2,7 @@ package ssm
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -133,19 +134,14 @@ func RunCommand(svc ssmiface.SSMAPI, instanceID string, command []string) (strin
 	}
 
 	commandID := *inputResult.Command.CommandId
-
-	// Get output and check it for ten iterations
+	fmt.Printf("Now running %s", command[0])
+	// Get output and check it for twenty iterations
 	var i int
-	for start := time.Now(); ; {
-		if i%10 == 0 {
-			if time.Since(start) > time.Second {
-				break
-			}
-		}
+	for i = 0; i < 20; i++ {
 
-		// Sleep for five seconds before attempting to retrieve output
-		time.Sleep(5000)
-
+		// Sleep for five seconds before attempting to
+		// retrieve output.
+		time.Sleep(5 * time.Second)
 		output, _ := svc.GetCommandInvocation(&ssm.GetCommandInvocationInput{
 			CommandId:  aws.String(commandID),
 			InstanceId: aws.String(instanceID),
