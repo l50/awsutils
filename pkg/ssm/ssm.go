@@ -16,12 +16,12 @@ import (
 type Connection struct {
 	Client  ssmiface.SSMAPI
 	Session *session.Session
-	Param   Param
+	Params   Params
 }
 
-// Param provides parameter
+// Params provides parameter
 // options for SSM.
-type Param struct {
+type Params struct {
 	Name      string
 	Value     string
 	Type      string
