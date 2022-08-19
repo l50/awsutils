@@ -16,7 +16,7 @@ import (
 type Connection struct {
 	Client  ssmiface.SSMAPI
 	Session *session.Session
-	Params   Params
+	Params  Params
 }
 
 // Params provides parameter
@@ -143,8 +143,8 @@ func RunCommand(svc ssmiface.SSMAPI, instanceID string, command []string) (strin
 			}
 		}
 
-        // Sleep for five seconds before attempting to retrieve output
-        time.Sleep(5000)
+		// Sleep for five seconds before attempting to retrieve output
+		time.Sleep(5000)
 
 		output, _ := svc.GetCommandInvocation(&ssm.GetCommandInvocationInput{
 			CommandId:  aws.String(commandID),
@@ -153,7 +153,7 @@ func RunCommand(svc ssmiface.SSMAPI, instanceID string, command []string) (strin
 
 		// Return command output if it's available
 		if output.Status != nil {
-			if *output.StandardOutputContent != "" {
+			if *output.Status != "InProgress" {
 				return *output.StandardOutputContent, nil
 			}
 		}
