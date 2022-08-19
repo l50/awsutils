@@ -143,6 +143,9 @@ func RunCommand(svc ssmiface.SSMAPI, instanceID string, command []string) (strin
 			}
 		}
 
+        // Sleep for five seconds before attempting to retrieve output
+        time.Sleep(5000)
+
 		output, _ := svc.GetCommandInvocation(&ssm.GetCommandInvocationInput{
 			CommandId:  aws.String(commandID),
 			InstanceId: aws.String(instanceID),
