@@ -43,6 +43,44 @@ func createClient() (ssmiface.SSMAPI, *session.Session) {
 	return svc, sess
 }
 
+// AgentReady checks if an SSM agent is ready.
+// Inputs:
+//     svc is an Amazon SSM service client
+//     name is the name of the parameter
+// Output:
+//     If success, return true and nil
+//     Otherwise, return false and an error from the call to DescribeInstanceInformation
+func AgentReady(svc ssmiface.SSMAPI, instanceID string, waitTime time.Duration) (bool, error) {
+	// Timeout after waitSeconds seconds
+	timeout := time.After(waitTime * time.Second)
+	// This for a test. We're fine.
+	//nolint:all
+	ticker := time.Tick(500 * time.Millisecond)
+	input := &ssm.DescribeInstanceInformationInput{}
+
+	for {
+		select {
+		case <-timeout:
+			return false, errors.New("timed out")
+		case <-ticker:
+			data, err := svc.DescribeInstanceInformation(input)
+			if err != nil {
+				return false, err
+			}
+
+			if len(data.InstanceInformationList) != 0 {
+				for _, d := range data.InstanceInformationList {
+					if *d.InstanceId == instanceID {
+						if *d.PingStatus == "Online" {
+							return true, nil
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 // CreateConnection creates a connection
 // with SSM and returns it.
 func CreateConnection() Connection {

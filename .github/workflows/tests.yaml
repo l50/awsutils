@@ -7,8 +7,9 @@ on:
 
 env:
   AMI: ${{ secrets.AMI }}
-  INST_NAME: goInstance
-  INST_TYPE: t2.micro
+  INST_NAME: actionsGoInstance
+  INST_TYPE: t3.micro
+  IAM_INSTANCE_PROFILE: AmazonSSMInstanceProfileForInstances
   SEC_GRP_ID: ${{ secrets.SEC_GRP_ID }}
   SUBNET_ID: ${{ secrets.SUBNET_ID }}
   VOLUME_SIZE: 100

@@ -3,12 +3,17 @@ package ssm
 import (
 	"fmt"
 	"log"
+	"os"
 	"testing"
+	"time"
+
+	ec2utils "github.com/l50/awsutils/pkg/ec2"
+	utils "github.com/l50/goutils"
 )
 
 var (
 	err       error
-	ssmParams = Param{
+	ssmParams = Params{
 		Name:      "TestParam",
 		Value:     "123456",
 		Type:      "String",
@@ -38,6 +43,7 @@ func init() {
 		)
 	}
 }
+
 func TestGetParam(t *testing.T) {
 	result, err := GetParam(ssmConnection.Client,
 		ssmParams.Name)
@@ -60,20 +66,80 @@ func TestDeleteParam(t *testing.T) {
 	}
 }
 
-// TODO: create an instance as part of this test
-// so that we can run this test.
-// func TestRunCommand(t *testing.T) {
-// 	instanceID := "TODO"
-// 	command := []string{
-// 		"whoami",
-// 	}
+func TestRunCommand(t *testing.T) {
+	timeout := time.Duration(60 * time.Second)
+	ssmConnection.Client, ssmConnection.Session = createClient()
+	if err != nil {
+		log.Fatalf(
+			"error running createClient(): %v",
+			err,
+		)
+	}
+	ec2Connection := ec2utils.CreateConnection()
+	volumeSize, _ := utils.StringToInt64(os.Getenv("VOLUME_SIZE"))
+	params := ec2utils.Params{
+		AssociatePublicIPAddress: true,
+		ImageID:                  os.Getenv("AMI"),
+		InstanceName:             os.Getenv("INST_NAME"),
+		InstanceType:             os.Getenv("INST_TYPE"),
+		InstanceProfile:          os.Getenv("IAM_INSTANCE_PROFILE"),
+		MinCount:                 1,
+		MaxCount:                 1,
+		SecurityGroupIDs:         []string{os.Getenv("SEC_GRP_ID")},
+		SubnetID:                 os.Getenv("SUBNET_ID"),
+		VolumeSize:               volumeSize,
+	}
+	ec2Connection.Reservation, err = ec2utils.CreateInstance(
+		ec2Connection.Client,
+		params,
+	)
+	if err != nil {
+		log.Fatalf(
+			"error running CreateInstance(): %v",
+			err,
+		)
+	}
+	ec2Connection.Params.InstanceID = ec2utils.GetInstanceID(
+		ec2Connection.Reservation.Instances[0],
+	)
 
-// 	result, err := RunCommand(ssmConnection.Client, instanceID, command)
-// 	if err != nil {
-// 		t.Fatalf(
-// 			"error running RunCommand(): %v",
-// 			err,
-// 		)
-// 	}
-// fmt.Println(result)
-// }
+	agentStatus, err := AgentReady(ssmConnection.Client, ec2Connection.Params.InstanceID, timeout)
+	if err != nil {
+		t.Fatalf(
+			"error running AgentReady(): %v",
+			err,
+		)
+	}
+
+	if agentStatus {
+		fmt.Printf("Successfully created SSM-managed instance: %s\n",
+			ec2Connection.Params.InstanceID)
+	}
+
+	command := []string{
+		"whoami",
+	}
+
+	result, err := RunCommand(ssmConnection.Client,
+		ec2Connection.Params.InstanceID, command)
+	if err != nil {
+		t.Fatalf(
+			"error running RunCommand(): %v",
+			err,
+		)
+	}
+	if verbose {
+		fmt.Println(result)
+	}
+
+	err = ec2utils.DestroyInstance(
+		ec2Connection.Client,
+		ec2Connection.Params.InstanceID,
+	)
+	if err != nil {
+		t.Fatalf(
+			"error running DestroyInstance(): %v",
+			err,
+		)
+	}
+}

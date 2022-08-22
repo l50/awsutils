@@ -92,3 +92,7 @@ This repo is comprised of aws utilities that I use across various go projects.
    vi pkg/ec2/test_env # fill in TODO values
    source pkg/ec2/test_env # export the env vars
    ```
+
+   Alternatively, you can debug with vscode by
+   removing the export statements in front of each
+   variable.

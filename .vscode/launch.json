@@ -11,7 +11,7 @@
       "preLaunchTask": "create mage_output_file.go",
       "postDebugTask": "delete mage_output_file.go",
       "showLog": true,
-      "envFile": "${workspaceFolder}/pkg/ec2/test_env.sensitive"
+      "envFile": "${workspaceFolder}/pkg/ssm/test_env_go.sensitive"
     }
   ]
 }
