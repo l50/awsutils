@@ -39,11 +39,8 @@ jobs:
       - name: Install mage
         run: go install github.com/magefile/mage@latest
 
-      - name: Compile magefile
-        run: mage -d .mage/ -compile ../magefile
-
       - name: Install pre-commit hooks
-        run: ./magefile installDeps
+        run: mage installDeps
 
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.0
