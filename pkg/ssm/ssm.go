@@ -45,11 +45,14 @@ func createClient() (ssmiface.SSMAPI, *session.Session) {
 
 // AgentReady checks if an SSM agent is ready.
 // Inputs:
-//     svc is an Amazon SSM service client
-//     name is the name of the parameter
+//
+//	svc is an Amazon SSM service client
+//	name is the name of the parameter
+//
 // Output:
-//     If success, return true and nil
-//     Otherwise, return false and an error from the call to DescribeInstanceInformation
+//
+//	If success, return true and nil
+//	Otherwise, return false and an error from the call to DescribeInstanceInformation
 func AgentReady(svc ssmiface.SSMAPI, instanceID string, waitTime time.Duration) (bool, error) {
 	// Timeout after waitSeconds seconds
 	timeout := time.After(waitTime * time.Second)
@@ -92,11 +95,14 @@ func CreateConnection() Connection {
 
 // DeleteParam deletes a parameter in SSM
 // Inputs:
-//     svc is an Amazon SSM service client
-//     name is the name of the parameter
+//
+//	svc is an Amazon SSM service client
+//	name is the name of the parameter
+//
 // Output:
-//     If success, information about the parameter and nil
-//     Otherwise, nil and an error from the call to DeleteParam
+//
+//	If success, information about the parameter and nil
+//	Otherwise, nil and an error from the call to DeleteParam
 func DeleteParam(svc ssmiface.SSMAPI, name string) error {
 	_, err := svc.DeleteParameter(&ssm.DeleteParameterInput{
 		Name: aws.String(name),
@@ -107,15 +113,18 @@ func DeleteParam(svc ssmiface.SSMAPI, name string) error {
 
 // PutParam creates a parameter in SSM
 // Inputs:
-//     svc is an Amazon SSM service client
-//     name is the name of the parameter
-//     value is the value of the parameter
-//     type is the type of parameter
-//     overwrite sets the flag to rewrite
-//     a parameter value
+//
+//	svc is an Amazon SSM service client
+//	name is the name of the parameter
+//	value is the value of the parameter
+//	type is the type of parameter
+//	overwrite sets the flag to rewrite
+//	a parameter value
+//
 // Output:
-//     If success, information about the parameter and nil
-//     Otherwise, nil and an error from the call to PutParam
+//
+//	If success, information about the parameter and nil
+//	Otherwise, nil and an error from the call to PutParam
 func PutParam(svc ssmiface.SSMAPI, name string, value string, paramType string, overwrite bool) error {
 	_, err := svc.PutParameter(&ssm.PutParameterInput{
 		Name:      aws.String(name),
@@ -129,13 +138,16 @@ func PutParam(svc ssmiface.SSMAPI, name string, value string, paramType string, 
 
 // GetParam fetches details of a parameter in SSM
 // Inputs:
-//     svc is an Amazon SSM service client
-//     name is the name of the parameter
-//     value is the value of the parameter
-//     paramType is the type of parameter
+//
+//	svc is an Amazon SSM service client
+//	name is the name of the parameter
+//	value is the value of the parameter
+//	paramType is the type of parameter
+//
 // Output:
-//     If success, information about the parameter and nil
-//     Otherwise, nil and an error from the call to GetParam
+//
+//	If success, information about the parameter and nil
+//	Otherwise, nil and an error from the call to GetParam
 func GetParam(svc ssmiface.SSMAPI, name string) (string, error) {
 
 	results, err := svc.GetParameter(&ssm.GetParameterInput{
@@ -151,11 +163,14 @@ func GetParam(svc ssmiface.SSMAPI, name string) (string, error) {
 
 // RunCommand runs an input command using SSM.
 // Inputs:
-//     svc is an Amazon SSM service client
-//     instanceID is the instance to run the command on
-//     command is the command to run
+//
+//	svc is an Amazon SSM service client
+//	instanceID is the instance to run the command on
+//	command is the command to run
+//
 // Output:
-//     If successful, the command output and nil will be returned.
+//
+//	If successful, the command output and nil will be returned.
 func RunCommand(svc ssmiface.SSMAPI, instanceID string, command []string) (string, error) {
 	params := map[string][]*string{"commands": aws.StringSlice(command)}
 	docName := "AWS-RunShellScript"
