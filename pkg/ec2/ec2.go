@@ -2,6 +2,9 @@ package ec2
 
 import (
 	"errors"
+	"io"
+	"net/http"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -34,6 +37,10 @@ type Params struct {
 	InstanceName             string
 	PublicIP                 string
 }
+
+var (
+	metadataEndpoint string
+)
 
 // createClient is a helper function that
 // returns a new ec2 session.
@@ -250,4 +257,22 @@ func GetInstanceState(client *ec2.EC2, instanceID string) (string, error) {
 	return *result.Reservations[0].
 		Instances[0].
 		State.Name, nil
+}
+
+// IsEC2Instance checks whether the code is running on an AWS EC2 instance by querying the EC2 instance metadata service
+// at http://169.254.169.254/latest/meta-data/instance-id. Returns true if the request succeeds and the response starts
+// with "i-", indicating that the code is running on an EC2 instance. Returns false otherwise.
+func IsEC2Instance() bool {
+	metadataEndpoint = "http://169.254.169.254/latest/meta-data/instance-id"
+
+	resp, err := http.Get(metadataEndpoint)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false
+	}
+	return strings.HasPrefix(string(body), "i-")
 }

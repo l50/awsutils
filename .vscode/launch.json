@@ -8,10 +8,35 @@
       "mode": "auto",
       "program": ".mage/mage_output_file.go",
       "buildFlags": "magefile.go",
-      "preLaunchTask": "create mage_output_file.go",
+      "preLaunchTask": "source_test_env_go && create mage_output_file.go",
       "postDebugTask": "delete mage_output_file.go",
-      "showLog": true,
-      "envFile": "${workspaceFolder}/pkg/ssm/test_env_go.sensitive"
+      "showLog": true
+    }
+  ],
+  "tasks": [
+    {
+      "label": "source_test_env_go",
+      "type": "shell",
+      "command": "source ./pkg/ssm/test_env.sensitive",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "create mage_output_file.go",
+      "type": "shell",
+      "command": "mage generate && go build -o .mage/mage_output_file.go magefile.go",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "delete mage_output_file.go",
+      "type": "shell",
+      "command": "rm .mage/mage_output_file.go",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
     }
   ]
 }

@@ -3,6 +3,8 @@ package ec2
 import (
 	"fmt"
 	"log"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"strconv"
 	"testing"
@@ -213,4 +215,28 @@ func TestDestroyInstance(t *testing.T) {
 			)
 		}
 	})
+}
+
+func TestIsEC2Instance(t *testing.T) {
+	// Test that the function returns true when running on an EC2 instance
+	// To simulate running on an EC2 instance, we can set the metadata endpoint to a mock server that returns a known instance ID
+	metadataEndpoint = "http://localhost:8080/latest/meta-data/instance-id"
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "i-1234567890abcdef")
+	}))
+	defer mockServer.Close()
+	oldEndpoint := metadataEndpoint
+	metadataEndpoint = mockServer.URL
+	defer func() { metadataEndpoint = oldEndpoint }()
+
+	if IsEC2Instance() {
+		t.Error("expected IsEC2Instance() to return true when running on an EC2 instance")
+	}
+
+	// Test that the function returns false when not running on an EC2 instance
+	// To simulate running on a non-EC2 environment, we can set the metadata endpoint to an invalid URL
+	metadataEndpoint = "http://invalid-metadata-url"
+	if IsEC2Instance() {
+		t.Error("expected IsEC2Instance() to return false when not running on an EC2 instance")
+	}
 }
