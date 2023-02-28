@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/aws/aws-sdk-go v1.44.210
 	github.com/google/uuid v1.3.0
-	github.com/l50/goutils v1.1.9
+	github.com/l50/goutils v1.2.0
 )
 
 require (
