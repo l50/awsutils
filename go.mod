@@ -3,7 +3,7 @@ module github.com/l50/awsutils
 go 1.19
 
 require (
-	github.com/aws/aws-sdk-go v1.44.211
+	github.com/aws/aws-sdk-go v1.44.213
 	github.com/google/uuid v1.3.0
 	github.com/l50/goutils v1.2.0
 )
