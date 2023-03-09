@@ -86,7 +86,7 @@ func TestGetRunningInstances(t *testing.T) {
 	}
 }
 
-func TestWaitingForInstance(t *testing.T) {
+func TestWaitForInstance(t *testing.T) {
 	// Skip test if running with
 	// go test -short
 	if testing.Short() {

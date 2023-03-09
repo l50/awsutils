@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -259,12 +260,20 @@ func GetInstanceState(client *ec2.EC2, instanceID string) (string, error) {
 		State.Name, nil
 }
 
-// IsEC2Instance checks whether the code is running on an AWS EC2 instance by querying the EC2 instance metadata service
-// at http://169.254.169.254/latest/meta-data/instance-id. Returns true if the request succeeds and the response starts
-// with "i-", indicating that the code is running on an EC2 instance. Returns false otherwise.
+// IsEC2Instance checks whether the code is running on an AWS EC2 instance by checking the existence of the file
+// /sys/devices/virtual/dmi/id/product_uuid. If the file exists, the code is running on an EC2 instance and the function
+// returns true. If the file does not exist, the function queries the EC2 instance metadata service at
+// http://169.254.169.254/latest/meta-data/instance-id. If the request succeeds and the response starts with "i-",
+// indicating that the code is running on an EC2 instance, the function returns true. If both the file check and
+// metadata endpoint request fail, the function returns false.
 func IsEC2Instance() bool {
-	metadataEndpoint = "http://169.254.169.254/latest/meta-data/instance-id"
+	// Check for the existence of the product_uuid file. If it exists, we're on an EC2 instance.
+	if _, err := os.Stat("/sys/devices/virtual/dmi/id/product_uuid"); err == nil {
+		return true
+	}
 
+	// If the file check fails, try the metadata endpoint as a last ditch effort.
+	metadataEndpoint := "http://169.254.169.254/latest/meta-data/instance-id"
 	resp, err := http.Get(metadataEndpoint)
 	if err != nil {
 		return false
