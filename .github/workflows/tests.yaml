@@ -20,16 +20,26 @@ jobs:
   tests:
     name: Run tests - includes pre-commit hooks and determining code coverage %
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
     steps:
       - name: Set up git repository
         uses: actions/checkout@v3
 
-      - name: Configure AWS credentials for env
-        uses: aws-actions/configure-aws-credentials@v1
+      # - name: Configure AWS credentials for env
+      #   uses: aws-actions/configure-aws-credentials@v1
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ env.AWS_DEFAULT_REGION }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.OIDC_ROLE_NAME }}
+          role-session-name: AWSUtilsActionsTest
 
       - name: Set up Go
         uses: actions/setup-go@v3
