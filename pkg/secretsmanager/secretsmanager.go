@@ -2,6 +2,7 @@ package secretsmanager
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -154,4 +155,31 @@ func GetSecret(client *secretsmanager.SecretsManager, secretName string) (string
 	}
 
 	return *secret.SecretString, nil
+}
+
+// ReplicateSecret replicates a secret with the specified `secretName` to multiple target regions.
+func ReplicateSecret(connection Connection, secretName string, newSecretName string, targetRegions []string) error {
+	// Get the existing secret value
+	secretValue, err := GetSecret(connection.Client, secretName)
+	if err != nil {
+		return fmt.Errorf("Error getting secret value: %v", err)
+	}
+
+	// Replicate the secret to the target regions
+	for _, targetRegion := range targetRegions {
+		targetSession, err := session.NewSession(&aws.Config{
+			Region: aws.String(targetRegion),
+		})
+		if err != nil {
+			return fmt.Errorf("Error creating session for region %s: %v", targetRegion, err)
+		}
+
+		targetClient := secretsmanager.New(targetSession)
+		err = CreateSecret(targetClient, newSecretName, "", secretValue)
+		if err != nil {
+			return fmt.Errorf("Error replicating secret to region %s: %v", targetRegion, err)
+		}
+	}
+
+	return nil
 }
