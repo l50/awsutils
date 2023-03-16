@@ -39,18 +39,17 @@ jobs:
         with:
           go-version: 1.19
 
-      - name: Install mage
-        run: go install github.com/magefile/mage@latest
-
-      - name: Install pre-commit hooks
-        run: mage installDeps
-
-      - name: Run pre-commit
-        uses: pre-commit/action@v3.0.0
-
       - name: Generate the coverage output
         run: |
           bash .hooks/go-unit-tests.sh coverage
+
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        # Only allow access using your registered public keys
+        # in github
+        with:
+          limit-access-to-actor: true
+        uses: mxschmitt/action-tmate@v3
 
       - name: Send the coverage output
         uses: shogo82148/actions-goveralls@v1

@@ -57,23 +57,12 @@ func TestGetSecret(t *testing.T) {
 	}
 }
 
-func TestDeleteSecret(t *testing.T) {
-	err := DeleteSecret(smConnection.Client,
-		smParams.Name, true)
-	if err != nil {
-		t.Fatalf(
-			"error running DeleteSecret(): %v",
-			err,
-		)
-	}
-}
-
 func TestReplicateSecret(t *testing.T) {
 	newSecretName, _ := utils.RandomString(10)
 	targetRegions := []string{"us-west-1", "eu-west-1"}
 
 	if err := ReplicateSecret(smConnection, smParams.Name, newSecretName, targetRegions); err != nil {
-		t.Fatalf("Error replicating secret: %v", err)
+		t.Fatalf("error replicating secret: %v", err)
 	}
 
 	// Verify that the new secret exists in each target region
@@ -82,20 +71,29 @@ func TestReplicateSecret(t *testing.T) {
 			Region: aws.String(region),
 		})
 		if err != nil {
-			t.Fatalf("Error creating session for region %s: %v", region, err)
+			t.Fatalf("error creating session for region %s: %v", region, err)
 		}
 
 		targetClient := secretsmanager.New(targetSession)
 
-		_, err = GetSecret(targetClient, newSecretName)
-		if err != nil {
-			t.Fatalf("Error getting replicated secret in region %s: %v", region, err)
+		if secret, err := GetSecret(targetClient, newSecretName); err != nil {
+			t.Fatalf("error getting replicated secret in region %s: %v", region, err)
 		}
 
 		// Cleanup: delete the replicated secret in each target region
-		err = DeleteSecret(targetClient, newSecretName, true)
-		if err != nil {
-			t.Fatalf("Error deleting replicated secret in region %s: %v", region, err)
+		if err := DeleteSecret(targetClient, newSecretName, true); err != nil {
+			t.Fatalf("error deleting replicated secret in region %s: %v", region, err)
 		}
+	}
+}
+
+func TestDeleteSecret(t *testing.T) {
+	err := DeleteSecret(smConnection.Client,
+		smParams.Name, true)
+	if err != nil {
+		t.Fatalf(
+			"error running DeleteSecret(): %v",
+			err,
+		)
 	}
 }
