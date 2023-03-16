@@ -2,10 +2,7 @@ package ec2
 
 import (
 	"errors"
-	"io"
-	"net/http"
 	"os"
-	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -272,16 +269,5 @@ func IsEC2Instance() bool {
 		return true
 	}
 
-	// If the file check fails, try the metadata endpoint as a last ditch effort.
-	metadataEndpoint := "http://169.254.169.254/latest/meta-data/instance-id"
-	resp, err := http.Get(metadataEndpoint)
-	if err != nil {
-		return false
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return false
-	}
-	return strings.HasPrefix(string(body), "i-")
+	return false
 }
