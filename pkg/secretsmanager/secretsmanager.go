@@ -162,7 +162,7 @@ func ReplicateSecret(connection Connection, secretName string, newSecretName str
 	// Get the existing secret value
 	secretValue, err := GetSecret(connection.Client, secretName)
 	if err != nil {
-		return fmt.Errorf("Error getting secret value: %v", err)
+		return fmt.Errorf("error getting secret value: %v", err)
 	}
 
 	// Replicate the secret to the target regions
@@ -171,13 +171,13 @@ func ReplicateSecret(connection Connection, secretName string, newSecretName str
 			Region: aws.String(targetRegion),
 		})
 		if err != nil {
-			return fmt.Errorf("Error creating session for region %s: %v", targetRegion, err)
+			return fmt.Errorf("error creating session for region %s: %v", targetRegion, err)
 		}
 
 		targetClient := secretsmanager.New(targetSession)
 		err = CreateSecret(targetClient, newSecretName, "", secretValue)
 		if err != nil {
-			return fmt.Errorf("Error replicating secret to region %s: %v", targetRegion, err)
+			return fmt.Errorf("error replicating secret to region %s: %v", targetRegion, err)
 		}
 	}
 
