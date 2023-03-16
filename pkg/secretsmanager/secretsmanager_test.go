@@ -76,7 +76,7 @@ func TestReplicateSecret(t *testing.T) {
 
 		targetClient := secretsmanager.New(targetSession)
 
-		if secret, err := GetSecret(targetClient, newSecretName); err != nil {
+		if _, err := GetSecret(targetClient, newSecretName); err != nil {
 			t.Fatalf("error getting replicated secret in region %s: %v", region, err)
 		}
 
