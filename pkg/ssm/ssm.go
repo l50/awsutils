@@ -187,7 +187,7 @@ func RunCommand(svc ssmiface.SSMAPI, instanceID string, command []string) (strin
 	}
 
 	commandID := *inputResult.Command.CommandId
-	fmt.Printf("Now running %s", command[0])
+	fmt.Printf("Now running %s on %s\n", command[0], instanceID)
 	// Get output and check it for twenty iterations
 	var i int
 	for i = 0; i < 20; i++ {
