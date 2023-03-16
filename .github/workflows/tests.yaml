@@ -43,14 +43,6 @@ jobs:
         run: |
           bash .hooks/go-unit-tests.sh coverage
 
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        # Only allow access using your registered public keys
-        # in github
-        with:
-          limit-access-to-actor: true
-        uses: mxschmitt/action-tmate@v3
-
       - name: Send the coverage output
         uses: shogo82148/actions-goveralls@v1
         with:
