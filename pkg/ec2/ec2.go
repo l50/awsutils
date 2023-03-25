@@ -257,12 +257,25 @@ func GetInstanceState(client *ec2.EC2, instanceID string) (string, error) {
 		State.Name, nil
 }
 
-// IsEC2Instance checks whether the code is running on an AWS EC2 instance by checking the existence of the file
-// /sys/devices/virtual/dmi/id/product_uuid. If the file exists, the code is running on an EC2 instance and the function
-// returns true. If the file does not exist, the function queries the EC2 instance metadata service at
-// http://169.254.169.254/latest/meta-data/instance-id. If the request succeeds and the response starts with "i-",
-// indicating that the code is running on an EC2 instance, the function returns true. If both the file check and
-// metadata endpoint request fail, the function returns false.
+// IsEC2Instance checks whether the code is running on an AWS
+// EC2 instance by checking the existence of the file
+// /sys/devices/virtual/dmi/id/product_uuid. If the file exists,
+// the code is running on an EC2 instance, and the function
+// returns true. If the file does not exist, the function returns false,
+// indicating that the code is not running on an EC2 instance.
+//
+// Example usage:
+//
+//	isEC2 := IsEC2Instance()
+//	if isEC2 {
+//		fmt.Println("Running on an EC2 instance")
+//	} else {
+//		fmt.Println("Not running on an EC2 instance")
+//	}
+//
+// Returns:
+//
+// bool: A boolean value that indicates whether the code is running on an EC2 instance.
 func IsEC2Instance() bool {
 	// Check for the existence of the product_uuid file. If it exists, we're on an EC2 instance.
 	if _, err := os.Stat("/sys/devices/virtual/dmi/id/product_uuid"); err == nil {
