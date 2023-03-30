@@ -8,17 +8,17 @@ on:
 
 jobs:
   labels:
+    permissions:
+      contents: read
+      pull-requests: write
     name: Sync Labels
     runs-on: ubuntu-latest
     steps:
       - name: Set up git repository
         uses: actions/checkout@v3.3.0
-        with:
-          token: "${{ secrets.BOT_TOKEN }}"
 
       - name: Sync Labels
         uses: EndBug/label-sync@v2.3.2
         with:
           config-file: .github/labels.yaml
-          token: "${{ secrets.BOT_TOKEN }}"
           delete-other-labels: true

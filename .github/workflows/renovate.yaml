@@ -29,12 +29,13 @@ env:
 jobs:
   renovate:
     name: Renovate
+    permissions:
+      contents: read
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - name: Set up git repository
         uses: actions/checkout@v3.3.0
-        with:
-          token: "${{ secrets.BOT_TOKEN }}"
 
       - name: Override default config from dispatch variables
         run: |
@@ -45,4 +46,3 @@ jobs:
         uses: renovatebot/github-action@v36.0.0
         with:
           configurationFile: "${{ env.RENOVATE_CONFIG_FILE }}"
-          token: "${{ secrets.BOT_TOKEN }}"
