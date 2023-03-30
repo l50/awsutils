@@ -3,13 +3,12 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/fatih/color"
-	utils "github.com/l50/goutils"
+	goutils "github.com/l50/goutils"
 
 	// mage utility functions
 	"github.com/magefile/mage/mg"
@@ -24,14 +23,19 @@ func init() {
 func InstallDeps() error {
 	fmt.Println(color.YellowString("Installing dependencies."))
 
-	if err := utils.Tidy(); err != nil {
+	if err := goutils.Tidy(); err != nil {
 		return fmt.Errorf(color.RedString(
 			"failed to install dependencies: %v", err))
 	}
 
-	if err := utils.InstallGoPCDeps(); err != nil {
+	if err := goutils.InstallGoPCDeps(); err != nil {
 		return fmt.Errorf(color.RedString(
 			"failed to install pre-commit dependencies: %v", err))
+	}
+
+	if err := goutils.InstallVSCodeModules(); err != nil {
+		return fmt.Errorf(color.RedString(
+			"failed to install vscode-go modules: %v", err))
 	}
 
 	return nil
@@ -42,29 +46,8 @@ func InstallPreCommitHooks() error {
 	mg.Deps(InstallDeps)
 
 	fmt.Println(color.YellowString("Installing pre-commit hooks."))
-	if err := utils.InstallPCHooks(); err != nil {
+	if err := goutils.InstallPCHooks(); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-// LocalGoMod Configures go.mod for local development
-func LocalGoMod() error {
-	fmt.Println(color.YellowString(
-		"Updating go.mod to work for local development."))
-	localChanges := []string{
-		"replace github.com/l50/awsutils => ../utils",
-	}
-
-	targetFile := "go.mod"
-
-	for _, change := range localChanges {
-		err := utils.AppendToFile(targetFile, change)
-		if err != nil {
-			return fmt.Errorf(color.RedString(
-				"failed to append %s to go.mod: %v", change, err))
-		}
 	}
 
 	return nil
@@ -75,45 +58,30 @@ func RunPreCommit() error {
 	mg.Deps(InstallDeps)
 
 	fmt.Println(color.YellowString("Updating pre-commit hooks."))
-	if err := utils.UpdatePCHooks(); err != nil {
+	if err := goutils.UpdatePCHooks(); err != nil {
 		return err
 	}
 
 	fmt.Println(color.YellowString(
 		"Clearing the pre-commit cache to ensure we have a fresh start."))
-	if err := utils.ClearPCCache(); err != nil {
+	if err := goutils.ClearPCCache(); err != nil {
 		return err
 	}
 
 	fmt.Println(color.YellowString("Running all pre-commit hooks locally."))
-	if err := sh.RunV("pre-commit", "run", "--all-files"); err != nil {
-		return fmt.Errorf(color.RedString("failed to run unit tests: %v", err))
+	if err := goutils.RunPCHooks(); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-// RunTests runs all tests by default. If a
-// directory that has tests is passed as a parameter:
-//
-// ```
-// # Example 1 - Run all EC2 tests
-// mage runTests ec2
-//
-// # Example 2 - Run all short tests
-// mage runTests short
-// ```
-//
-// then it will only run those tests.
-func RunTests(ctx context.Context, testSuite string) error {
+// RunTests runs all of the unit tests
+func RunTests() error {
 	mg.Deps(InstallDeps)
 
-	if testSuite == "" {
-		testSuite = "all"
-	}
-
-	fmt.Printf(color.YellowString("Running %s unit tests.\n", testSuite))
-	if err := sh.RunV(filepath.Join(".hooks", "go-unit-tests.sh"), testSuite); err != nil {
+	fmt.Println(color.YellowString("Running unit tests."))
+	if err := sh.RunV(filepath.Join(".hooks", "go-unit-tests.sh"), "all"); err != nil {
 		return fmt.Errorf(color.RedString("failed to run unit tests: %v", err))
 	}
 
@@ -122,9 +90,19 @@ func RunTests(ctx context.Context, testSuite string) error {
 
 // UpdateMirror updates pkg.go.dev with the release associated with the input tag
 func UpdateMirror(tag string) error {
+	var err error
 	fmt.Println(color.YellowString("Updating pkg.go.dev with the new tag %s.", tag))
-	err := sh.RunV("curl", "--silent", fmt.Sprintf(
-		"https://proxy.golang.org/github.com/l50/awsutils/@v/%s.info", tag))
+
+	err = sh.RunV("curl", "--silent", fmt.Sprintf(
+		"https://sum.golang.org/lookup/github.com/l50/goutils@%s",
+		tag))
+	if err != nil {
+		return fmt.Errorf(color.RedString("failed to update proxy.golang.org: %w", err))
+	}
+
+	err = sh.RunV("curl", "--silent", fmt.Sprintf(
+		"https://proxy.golang.org/github.com/l50/goutils/@v/%s.info",
+		tag))
 	if err != nil {
 		return fmt.Errorf(color.RedString("failed to update pkg.go.dev: %w", err))
 	}
