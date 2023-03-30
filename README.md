@@ -5,7 +5,6 @@
 [![Tests](https://github.com/l50/awsutils/actions/workflows/tests.yaml/badge.svg)](https://github.com/l50/awsutils/actions/workflows/tests.yaml)
 [![🚨 CodeQL Analysis](https://github.com/l50/awsutils/actions/workflows/codeql-analysis.yaml/badge.svg)](https://github.com/l50/awsutils/actions/workflows/codeql-analysis.yaml)
 [![🚨 Semgrep Analysis](https://github.com/l50/awsutils/actions/workflows/semgrep.yaml/badge.svg)](https://github.com/l50/awsutils/actions/workflows/semgrep.yaml)
-[![Pre-commit](https://github.com/l50/awsutils/actions/workflows/pre-commit.yaml/badge.svg)](https://github.com/l50/awsutils/actions/workflows/pre-commit.yaml)
 [![Coverage Status](https://coveralls.io/repos/github/l50/awsutils/badge.svg?branch=main)](https://coveralls.io/github/l50/awsutils?branch=main)
 
 This repo is comprised of aws utilities that I use across various go projects.
