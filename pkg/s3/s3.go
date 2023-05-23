@@ -147,14 +147,14 @@ func UploadBucketFile(sess *session.Session, bucketName string, uploadFP string)
 	return nil
 }
 
-// DownloadBucketFile downloads a file found at the file path specified with (`uploadFP`)
-// to the input `bucketName`.
-func DownloadBucketFile(sess *session.Session, bucketName string, downloadFP string) error {
+// DownloadBucketFile downloads a file found at the file path specified with
+// the input objectKey to the input bucketName.
+func DownloadBucketFile(sess *session.Session, bucketName string, objectKey string, downloadFP string) (string, error) {
 	downloader := s3manager.NewDownloader(sess)
 
 	file, err := os.Create(downloadFP)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	defer file.Close()
@@ -162,13 +162,13 @@ func DownloadBucketFile(sess *session.Session, bucketName string, downloadFP str
 	numBytes, err := downloader.Download(file,
 		&s3.GetObjectInput{
 			Bucket: aws.String(bucketName),
-			Key:    aws.String(downloadFP),
+			Key:    aws.String(objectKey),
 		})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	fmt.Println("Successfully downloaded", file.Name(), numBytes, "bytes")
 
-	return nil
+	return file.Name(), nil
 }
