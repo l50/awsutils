@@ -96,6 +96,50 @@ func CreateSecret(client *secretsmanager.SecretsManager,
 	return nil
 }
 
+// UpdateSecret updates an existing secret
+func UpdateSecret(client *secretsmanager.SecretsManager, secretName string, secretValue string) error {
+	_, err := client.UpdateSecret(&secretsmanager.UpdateSecretInput{
+		SecretId:     aws.String(secretName),
+		SecretString: aws.String(secretValue),
+	})
+	if err != nil {
+		// Handle the error
+		return fmt.Errorf("error updating secret: %v", err)
+	}
+	return nil
+}
+
+// CreateOrUpdateSecret creates a new secret or updates an existing one.
+func CreateOrUpdateSecret(client *secretsmanager.SecretsManager, secretName string, secretDesc string, secretValue string) error {
+    _, err := client.CreateSecret(&secretsmanager.CreateSecretInput{
+        Name:         aws.String(secretName),
+        Description:  aws.String(secretDesc),
+        SecretString: aws.String(secretValue),
+    })
+
+    if err != nil {
+        if aerr, ok := err.(awserr.Error); ok {
+            switch aerr.Code() {
+            case secretsmanager.ErrCodeResourceExistsException:
+                // Secret already exists, update it.
+                _, err := client.UpdateSecret(&secretsmanager.UpdateSecretInput{
+                    SecretId:     aws.String(secretName),
+                    SecretString: aws.String(secretValue),
+                })
+                if err != nil {
+                    return err
+                }
+            default:
+                return aerr
+            }
+        } else {
+            return err
+        }
+    }
+    return nil
+}
+
+
 // DeleteSecret deletes an input `secretName`.
 // It will attempt to do so forcefully if `forceDelete`
 // is set to true.
@@ -175,8 +219,7 @@ func ReplicateSecret(connection Connection, secretName string, newSecretName str
 		}
 
 		targetClient := secretsmanager.New(targetSession)
-		err = CreateSecret(targetClient, newSecretName, "", secretValue)
-		if err != nil {
+		if err := CreateOrUpdateSecret(targetClient, newSecretName, "", secretValue); err != nil {
 			return fmt.Errorf("error replicating secret to region %s: %v", targetRegion, err)
 		}
 	}
