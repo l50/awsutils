@@ -111,34 +111,33 @@ func UpdateSecret(client *secretsmanager.SecretsManager, secretName string, secr
 
 // CreateOrUpdateSecret creates a new secret or updates an existing one.
 func CreateOrUpdateSecret(client *secretsmanager.SecretsManager, secretName string, secretDesc string, secretValue string) error {
-    _, err := client.CreateSecret(&secretsmanager.CreateSecretInput{
-        Name:         aws.String(secretName),
-        Description:  aws.String(secretDesc),
-        SecretString: aws.String(secretValue),
-    })
+	_, err := client.CreateSecret(&secretsmanager.CreateSecretInput{
+		Name:         aws.String(secretName),
+		Description:  aws.String(secretDesc),
+		SecretString: aws.String(secretValue),
+	})
 
-    if err != nil {
-        if aerr, ok := err.(awserr.Error); ok {
-            switch aerr.Code() {
-            case secretsmanager.ErrCodeResourceExistsException:
-                // Secret already exists, update it.
-                _, err := client.UpdateSecret(&secretsmanager.UpdateSecretInput{
-                    SecretId:     aws.String(secretName),
-                    SecretString: aws.String(secretValue),
-                })
-                if err != nil {
-                    return err
-                }
-            default:
-                return aerr
-            }
-        } else {
-            return err
-        }
-    }
-    return nil
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case secretsmanager.ErrCodeResourceExistsException:
+				// Secret already exists, update it.
+				_, err := client.UpdateSecret(&secretsmanager.UpdateSecretInput{
+					SecretId:     aws.String(secretName),
+					SecretString: aws.String(secretValue),
+				})
+				if err != nil {
+					return err
+				}
+			default:
+				return aerr
+			}
+		} else {
+			return err
+		}
+	}
+	return nil
 }
-
 
 // DeleteSecret deletes an input `secretName`.
 // It will attempt to do so forcefully if `forceDelete`

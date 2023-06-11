@@ -99,79 +99,78 @@ func TestDeleteSecret(t *testing.T) {
 }
 
 func TestUpdateSecret(t *testing.T) {
-    // First, let's create a secret for testing update functionality
-    testName, _ := utils.RandomString(10)
-    testValue := "InitialValue"
-    err := CreateSecret(smConnection.Client, testName, "Test Secret", testValue)
-    if err != nil {
-        t.Fatalf("error creating secret for TestUpdateSecret: %v", err)
-    }
+	// First, let's create a secret for testing update functionality
+	testName, _ := utils.RandomString(10)
+	testValue := "InitialValue"
+	err := CreateSecret(smConnection.Client, testName, "Test Secret", testValue)
+	if err != nil {
+		t.Fatalf("error creating secret for TestUpdateSecret: %v", err)
+	}
 
-    // Now, let's update this secret
-    newValue := "UpdatedValue"
-    err = UpdateSecret(smConnection.Client, testName, newValue)
-    if err != nil {
-        t.Fatalf("error updating secret: %v", err)
-    }
+	// Now, let's update this secret
+	newValue := "UpdatedValue"
+	err = UpdateSecret(smConnection.Client, testName, newValue)
+	if err != nil {
+		t.Fatalf("error updating secret: %v", err)
+	}
 
-    // Retrieve the updated secret and check if it's updated correctly
-    secretValue, err := GetSecret(smConnection.Client, testName)
-    if err != nil {
-        t.Fatalf("error getting updated secret: %v", err)
-    }
+	// Retrieve the updated secret and check if it's updated correctly
+	secretValue, err := GetSecret(smConnection.Client, testName)
+	if err != nil {
+		t.Fatalf("error getting updated secret: %v", err)
+	}
 
-    if secretValue != newValue {
-        t.Fatalf("error in TestUpdateSecret, expected: %s, got: %s", newValue, secretValue)
-    }
+	if secretValue != newValue {
+		t.Fatalf("error in TestUpdateSecret, expected: %s, got: %s", newValue, secretValue)
+	}
 
-    // Cleanup: delete the secret we used for testing
-    err = DeleteSecret(smConnection.Client, testName, true)
-    if err != nil {
-        t.Fatalf("error deleting secret for TestUpdateSecret: %v", err)
-    }
+	// Cleanup: delete the secret we used for testing
+	err = DeleteSecret(smConnection.Client, testName, true)
+	if err != nil {
+		t.Fatalf("error deleting secret for TestUpdateSecret: %v", err)
+	}
 }
 
 func TestCreateOrUpdateSecret(t *testing.T) {
-    testName, _ := utils.RandomString(10)
-    testValue := "InitialValue"
+	testName, _ := utils.RandomString(10)
+	testValue := "InitialValue"
 
-    // Use CreateOrUpdateSecret to create a new secret
-    err := CreateOrUpdateSecret(smConnection.Client, testName, "Test Secret", testValue)
-    if err != nil {
-        t.Fatalf("error creating secret for TestCreateOrUpdateSecret: %v", err)
-    }
+	// Use CreateOrUpdateSecret to create a new secret
+	err := CreateOrUpdateSecret(smConnection.Client, testName, "Test Secret", testValue)
+	if err != nil {
+		t.Fatalf("error creating secret for TestCreateOrUpdateSecret: %v", err)
+	}
 
-    // Verify if the secret was created successfully
-    secretValue, err := GetSecret(smConnection.Client, testName)
-    if err != nil {
-        t.Fatalf("error getting created secret: %v", err)
-    }
+	// Verify if the secret was created successfully
+	secretValue, err := GetSecret(smConnection.Client, testName)
+	if err != nil {
+		t.Fatalf("error getting created secret: %v", err)
+	}
 
-    if secretValue != testValue {
-        t.Fatalf("error in TestCreateOrUpdateSecret, expected: %s, got: %s", testValue, secretValue)
-    }
+	if secretValue != testValue {
+		t.Fatalf("error in TestCreateOrUpdateSecret, expected: %s, got: %s", testValue, secretValue)
+	}
 
-    // Now, let's update this secret using the same function
-    newValue := "UpdatedValue"
-    err = CreateOrUpdateSecret(smConnection.Client, testName, "Test Secret", newValue)
-    if err != nil {
-        t.Fatalf("error updating secret for TestCreateOrUpdateSecret: %v", err)
-    }
+	// Now, let's update this secret using the same function
+	newValue := "UpdatedValue"
+	err = CreateOrUpdateSecret(smConnection.Client, testName, "Test Secret", newValue)
+	if err != nil {
+		t.Fatalf("error updating secret for TestCreateOrUpdateSecret: %v", err)
+	}
 
-    // Verify if the secret was updated successfully
-    secretValue, err = GetSecret(smConnection.Client, testName)
-    if err != nil {
-        t.Fatalf("error getting updated secret: %v", err)
-    }
+	// Verify if the secret was updated successfully
+	secretValue, err = GetSecret(smConnection.Client, testName)
+	if err != nil {
+		t.Fatalf("error getting updated secret: %v", err)
+	}
 
-    if secretValue != newValue {
-        t.Fatalf("error in TestCreateOrUpdateSecret, expected: %s, got: %s", newValue, secretValue)
-    }
+	if secretValue != newValue {
+		t.Fatalf("error in TestCreateOrUpdateSecret, expected: %s, got: %s", newValue, secretValue)
+	}
 
-    // Cleanup: delete the secret we used for testing
-    err = DeleteSecret(smConnection.Client, testName, true)
-    if err != nil {
-        t.Fatalf("error deleting secret for TestCreateOrUpdateSecret: %v", err)
-    }
+	// Cleanup: delete the secret we used for testing
+	err = DeleteSecret(smConnection.Client, testName, true)
+	if err != nil {
+		t.Fatalf("error deleting secret for TestCreateOrUpdateSecret: %v", err)
+	}
 }
-
