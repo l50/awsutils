@@ -17,7 +17,7 @@
     {
       "label": "source_test_env_go",
       "type": "shell",
-      "command": "source ./pkg/ssm/test_env.sensitive",
+      "command": "source ./ssm/test_env.sensitive",
       "options": {
         "cwd": "${workspaceFolder}"
       }

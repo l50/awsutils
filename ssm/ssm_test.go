@@ -1,4 +1,4 @@
-package ssm
+package ssm_test
 
 import (
 	"fmt"
@@ -7,45 +7,44 @@ import (
 	"testing"
 	"time"
 
-	ec2utils "github.com/l50/awsutils/pkg/ec2"
-	utils "github.com/l50/goutils"
+	ec2utils "github.com/l50/awsutils/ec2"
+	"github.com/l50/awsutils/ssm"
+	"github.com/l50/goutils/v2/str"
 )
 
 var (
 	err       error
-	ssmParams = Params{
+	ssmParams = ssm.Params{
 		Name:      "TestParam",
 		Value:     "123456",
 		Type:      "String",
 		Overwrite: true,
 	}
-	ssmConnection = Connection{}
+	ssmConnection = ssm.CreateConnection()
 	verbose       bool
 )
 
 func init() {
 	verbose = false
-	ssmConnection.Client, ssmConnection.Session = createClient()
 	if err != nil {
 		log.Fatalf(
 			"error running createClient(): %v",
 			err,
 		)
 	}
+}
 
-	err := PutParam(ssmConnection.Client,
+func TestGetParam(t *testing.T) {
+	if err := ssm.PutParam(ssmConnection.Client,
 		ssmParams.Name, ssmParams.Value,
-		ssmParams.Type, ssmParams.Overwrite)
-	if err != nil {
+		ssmParams.Type, ssmParams.Overwrite); err != nil {
 		log.Fatalf(
 			"error running CreateSSMParam(): %v",
 			err,
 		)
 	}
-}
 
-func TestGetParam(t *testing.T) {
-	result, err := GetParam(ssmConnection.Client,
+	result, err := ssm.GetParam(ssmConnection.Client,
 		ssmParams.Name)
 	if err != nil {
 		t.Fatalf(
@@ -57,8 +56,16 @@ func TestGetParam(t *testing.T) {
 }
 
 func TestDeleteParam(t *testing.T) {
-	err := DeleteParam(ssmConnection.Client, ssmParams.Name)
-	if err != nil {
+	if err := ssm.PutParam(ssmConnection.Client,
+		ssmParams.Name, ssmParams.Value,
+		ssmParams.Type, ssmParams.Overwrite); err != nil {
+		log.Fatalf(
+			"error running CreateSSMParam(): %v",
+			err,
+		)
+	}
+
+	if err := ssm.DeleteParam(ssmConnection.Client, ssmParams.Name); err != nil {
 		t.Fatalf(
 			"error running DeleteParam(): %v",
 			err,
@@ -68,7 +75,7 @@ func TestDeleteParam(t *testing.T) {
 
 func TestRunCommand(t *testing.T) {
 	timeout := time.Duration(60 * time.Second)
-	ssmConnection.Client, ssmConnection.Session = createClient()
+	ssmConnection = ssm.CreateConnection()
 	if err != nil {
 		log.Fatalf(
 			"error running createClient(): %v",
@@ -76,7 +83,7 @@ func TestRunCommand(t *testing.T) {
 		)
 	}
 	ec2Connection := ec2utils.CreateConnection()
-	volumeSize, _ := utils.StringToInt64(os.Getenv("VOLUME_SIZE"))
+	volumeSize, _ := str.ToInt64(os.Getenv("VOLUME_SIZE"))
 	params := ec2utils.Params{
 		AssociatePublicIPAddress: true,
 		ImageID:                  os.Getenv("AMI"),
@@ -103,7 +110,7 @@ func TestRunCommand(t *testing.T) {
 		ec2Connection.Reservation.Instances[0],
 	)
 
-	agentStatus, err := AgentReady(ssmConnection.Client, ec2Connection.Params.InstanceID, timeout)
+	agentStatus, err := ssm.AgentReady(ssmConnection.Client, ec2Connection.Params.InstanceID, timeout)
 	if err != nil {
 		t.Fatalf(
 			"error running AgentReady(): %v",
@@ -117,10 +124,12 @@ func TestRunCommand(t *testing.T) {
 	}
 
 	command := []string{
-		"whoami",
+		"echo",
+		"Hello World!",
+		"My name is $(whoami)",
 	}
 
-	result, err := RunCommand(ssmConnection.Client,
+	result, err := ssm.RunCommand(ssmConnection.Client,
 		ec2Connection.Params.InstanceID, command)
 	if err != nil {
 		t.Fatalf(
@@ -128,6 +137,7 @@ func TestRunCommand(t *testing.T) {
 			err,
 		)
 	}
+
 	if verbose {
 		fmt.Println(result)
 	}
