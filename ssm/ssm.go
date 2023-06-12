@@ -54,10 +54,7 @@ func createClient() (ssmiface.SSMAPI, *session.Session) {
 //	If success, return true and nil
 //	Otherwise, return false and an error from the call to DescribeInstanceInformation
 func AgentReady(svc ssmiface.SSMAPI, instanceID string, waitTime time.Duration) (bool, error) {
-	// Timeout after waitSeconds seconds
 	timeout := time.After(waitTime * time.Second)
-	// This for a test. We're fine.
-	//nolint:all
 	ticker := time.Tick(500 * time.Millisecond)
 	input := &ssm.DescribeInstanceInformationInput{}
 
@@ -82,6 +79,30 @@ func AgentReady(svc ssmiface.SSMAPI, instanceID string, waitTime time.Duration) 
 			}
 		}
 	}
+}
+
+// CheckAWSCLIInstalled checks if AWS CLI is installed on the instance.
+// Inputs:
+//
+//	svc is an Amazon SSM service client
+//	instanceID is the instance to check
+//
+// Output:
+//
+//	If successful, return true and nil. If AWS CLI is not installed or an error occurred, return false and the error.
+func CheckAWSCLIInstalled(svc ssmiface.SSMAPI, instanceID string) (bool, error) {
+	command := []string{"command -v aws"}
+	output, err := RunCommand(svc, instanceID, command)
+	if err != nil {
+		return false, err
+	}
+
+	// AWS CLI is not installed if the output is empty
+	if output == "" {
+		return false, errors.New("AWS CLI is not installed on the instance")
+	}
+
+	return true, nil
 }
 
 // CreateConnection creates a connection
