@@ -1,30 +1,33 @@
-package s3
+package s3_test
 
 import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
-	goutils "github.com/l50/goutils"
+	"github.com/l50/awsutils/s3"
+	fileutils "github.com/l50/goutils/v2/file"
+	"github.com/l50/goutils/v2/str"
 )
 
 var (
 	err        error
-	randStr, _ = goutils.RandomString(10)
-	s3Params   = Params{
+	randStr, _ = str.GenRandom(10)
+	s3Params   = s3.Params{
 		BucketName: randStr,
 		Created:    time.Now(),
 		Modified:   time.Now(),
 	}
-	s3Connection = Connection{}
+	s3Connection = s3.Connection{}
 	verbose      bool
 )
 
 func init() {
 	verbose = false
-	s3Connection.Client, s3Connection.Session = createClient()
+	s3Connection = s3.CreateConnection()
 	if err != nil {
 		log.Fatalf(
 			"error running createClient(): %v",
@@ -32,9 +35,8 @@ func init() {
 		)
 	}
 
-	err = CreateBucket(s3Connection.Client,
-		randStr)
-	if err != nil {
+	if err := s3.CreateBucket(s3Connection.Client,
+		randStr); err != nil {
 		log.Fatalf(
 			"error running CreateBucket(): %v",
 			err,
@@ -42,87 +44,84 @@ func init() {
 	}
 }
 
-func TestGetBuckets(t *testing.T) {
-	verbose = false
-	result, err := GetBuckets(s3Connection.Client)
-	if err != nil {
-		t.Fatalf(
-			"error running GetBuckets(): %v",
-			err,
-		)
+func TestS3Functions(t *testing.T) {
+	tests := []struct {
+		name        string
+		bucketName  string
+		uploadFile  string
+		downloadDir string
+	}{
+		{
+			name:        "test 1",
+			bucketName:  randStr,
+			uploadFile:  "testFile",
+			downloadDir: "/tmp/",
+		},
 	}
-	if verbose {
-		for _, n := range result {
-			log.Println("Bucket: ", *n.Name)
-		}
-	}
-}
 
-func TestDownloadBucketFile(t *testing.T) {
-	uploadFile := "testFile"
-	if goutils.CreateEmptyFile(uploadFile) {
-		if err := goutils.AppendToFile(uploadFile, "teststring123"); err == nil {
-			if err := UploadBucketFile(s3Connection.Session, randStr, uploadFile); err != nil {
-				t.Fatalf(
-					"error uploading %s to %s: %v",
-					uploadFile,
-					randStr,
-					err,
-				)
+	s3Connection := s3.CreateConnection()
+	if err := s3.CreateBucket(s3Connection.Client, randStr); err != nil {
+		t.Fatalf("error running CreateBucket(): %v", err)
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// TestGetBuckets
+			if _, err := s3.GetBuckets(s3Connection.Client); err != nil {
+				t.Fatalf("error running GetBuckets(): %v", err)
 			}
-		}
+
+			// TestDownloadBucketFile
+			testContent := []byte("teststring123")
+			if err := fileutils.Create(tc.uploadFile, testContent); err != nil {
+				t.Fatalf("error creating %s: %v", tc.uploadFile, err)
+			}
+
+			if err := fileutils.Append(tc.uploadFile, string(testContent)); err != nil {
+				t.Fatalf("error appending to %s: %v", tc.uploadFile, err)
+			} else {
+				if err := s3.UploadBucketFile(s3Connection.Session, tc.bucketName, tc.uploadFile); err != nil {
+					t.Fatalf("error uploading %s to %s: %v", tc.uploadFile, tc.bucketName, err)
+				}
+			}
+
+			if err := os.Remove(tc.uploadFile); err != nil {
+				t.Fatalf("failed to remove %s: %v", tc.uploadFile, err)
+			}
+
+			downloadPath := filepath.Join(tc.downloadDir, tc.uploadFile)
+			_, err = s3.DownloadBucketFile(s3Connection.Session, tc.bucketName, tc.uploadFile, downloadPath)
+			if err != nil {
+				t.Fatalf("error downloading %s from %s: %v", tc.uploadFile, tc.bucketName, err)
+			}
+
+			file, err := os.Open(downloadPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer file.Close()
+
+			content, err := io.ReadAll(file)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(content) == 0 {
+				t.Fatalf("downloaded file %s is empty", downloadPath)
+			}
+
+			if err := os.Remove(downloadPath); err != nil {
+				t.Fatalf("failed to remove %s: %v", downloadPath, err)
+			}
+
+			// TestDestroyBucket
+			if err := s3.EmptyBucket(s3Connection.Client, tc.bucketName); err != nil {
+				t.Fatalf("error running EmptyBucket(): %v", err)
+			}
+
+			if err := s3.DestroyBucket(s3Connection.Client, tc.bucketName); err != nil {
+				t.Fatalf("error running DestroyBucket(): %v", err)
+			}
+		})
 	}
-
-	if err := os.Remove(uploadFile); err != nil {
-		t.Fatalf("failed to remove %s: %v", uploadFile, err)
-	}
-
-	downloadedFileName, err := DownloadBucketFile(s3Connection.Session, randStr, uploadFile, "/tmp/"+uploadFile)
-	if err != nil {
-		t.Fatalf(
-			"error downloading %s from %s: %v",
-			uploadFile,
-			randStr,
-			err,
-		)
-	}
-
-	downloadedFile, err := os.Open(downloadedFileName)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer downloadedFile.Close()
-
-	downloadedFileContent, err := io.ReadAll(downloadedFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(downloadedFileContent) == 0 {
-		t.Fatalf(
-			"downloaded file %s is empty", downloadedFileName,
-		)
-	}
-
-	if err := os.Remove(downloadedFileName); err != nil {
-		t.Fatalf("failed to remove %s: %v", downloadedFileName, err)
-	}
-}
-
-func TestDestroyBucket(t *testing.T) {
-	t.Cleanup(func() {
-		if err := EmptyBucket(s3Connection.Client, s3Params.BucketName); err != nil {
-			t.Fatalf(
-				"error running EmptyBucket(): %v",
-				err,
-			)
-		}
-
-		if err := DestroyBucket(s3Connection.Client, s3Params.BucketName); err != nil {
-			t.Fatalf(
-				"error running DestroyBucket(): %v",
-				err,
-			)
-		}
-	})
 }
