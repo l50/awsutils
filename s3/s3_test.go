@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/l50/awsutils/s3"
 	fileutils "github.com/l50/goutils/v2/file"
@@ -14,13 +13,8 @@ import (
 )
 
 var (
-	err        error
-	randStr, _ = str.GenRandom(10)
-	s3Params   = s3.Params{
-		BucketName: randStr,
-		Created:    time.Now(),
-		Modified:   time.Now(),
-	}
+	err          error
+	randStr, _   = str.GenRandom(10)
 	s3Connection = s3.Connection{}
 	verbose      bool
 )

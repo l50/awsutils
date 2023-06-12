@@ -55,14 +55,15 @@ func createClient() (ssmiface.SSMAPI, *session.Session) {
 //	Otherwise, return false and an error from the call to DescribeInstanceInformation
 func AgentReady(svc ssmiface.SSMAPI, instanceID string, waitTime time.Duration) (bool, error) {
 	timeout := time.After(waitTime * time.Second)
-	ticker := time.Tick(500 * time.Millisecond)
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
 	input := &ssm.DescribeInstanceInformationInput{}
 
 	for {
 		select {
 		case <-timeout:
 			return false, errors.New("timed out")
-		case <-ticker:
+		case <-ticker.C: // Listen for the ticker's channel
 			data, err := svc.DescribeInstanceInformation(input)
 			if err != nil {
 				return false, err

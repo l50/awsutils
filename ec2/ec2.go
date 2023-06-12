@@ -2,7 +2,9 @@ package ec2
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -110,6 +112,22 @@ func CreateInstance(client *ec2.EC2, ec2Params Params) (*ec2.Reservation, error)
 	}
 
 	return result, nil
+}
+
+// CheckInstanceExists checks if an EC2 instance with the given instance ID exists.
+func CheckInstanceExists(client *ec2.EC2, instanceID string) error {
+	instances, err := GetInstances(client, nil)
+	if err != nil {
+		return err
+	}
+
+	for _, instance := range instances {
+		if *instance.InstanceId == instanceID {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("instance %s does not exist", instanceID)
 }
 
 // TagInstance tags the instance tied to the input ID with the specified tag.
@@ -283,4 +301,25 @@ func IsEC2Instance() bool {
 	}
 
 	return false
+}
+
+// GetInstancesRunningForMoreThan24Hours returns a list of all EC2 instances running
+// for more than 24 hours.
+func GetInstancesRunningForMoreThan24Hours(client *ec2.EC2) ([]*ec2.Instance, error) {
+	// get all instances
+	instances, err := GetInstances(client, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// filter out instances running for more than 24 hours
+	var instancesOver24Hours []*ec2.Instance
+	for _, instance := range instances {
+		// Check if instance's LaunchTime is more than 24 hours ago
+		if instance.LaunchTime.Before(time.Now().Add(-24 * time.Hour)) {
+			instancesOver24Hours = append(instancesOver24Hours, instance)
+		}
+	}
+
+	return instancesOver24Hours, nil
 }
