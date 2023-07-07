@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -244,5 +245,88 @@ func TestIsEC2Instance(t *testing.T) {
 	// Running this test in a github action breaks the test logic.
 	if IsEC2Instance() && !runningAction() {
 		t.Error("expected IsEC2Instance() to return false when not running on an EC2 instance")
+	}
+}
+
+func TestGetLatestAMI(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     AMIInfo
+		expectErr bool
+	}{
+		{
+			name: "Ubuntu 22.04 arm64",
+			input: AMIInfo{
+				Distro:       "ubuntu",
+				Version:      "22.04",
+				Architecture: "arm64",
+				Region:       "us-west-1",
+			},
+			expectErr: false,
+		},
+		{
+			name: "Ubuntu 20.04 amd64",
+			input: AMIInfo{
+				Distro:       "ubuntu",
+				Version:      "20.04",
+				Architecture: "amd64",
+				Region:       "us-west-1",
+			},
+			expectErr: false,
+		},
+		{
+			name: "Unsupported distro",
+			input: AMIInfo{
+				Distro:       "not-supported",
+				Version:      "20.04",
+				Architecture: "amd64",
+				Region:       "us-west-1",
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			gotOutput, gotError := GetLatestAMI(tc.input)
+
+			// Additional checks
+			if gotError == nil {
+				// AMI ID should start with "ami-"
+				if !strings.HasPrefix(gotOutput, "ami-") {
+					t.Errorf("expected AMI ID to start with 'ami-', got '%v'", gotOutput)
+				}
+
+				// Get AMI information
+				imageOutput, err := ec2Connection.Client.DescribeImages(&ec2.DescribeImagesInput{
+					ImageIds: []*string{&gotOutput},
+				})
+
+				if err != nil {
+					t.Errorf("error describing image: %v", err)
+				}
+
+				image := imageOutput.Images[0]
+
+				// Check if the architecture of the AMI matches
+				architecture := tc.input.Architecture
+				if architecture == "amd64" {
+					architecture = "x86_64"
+				}
+				if *image.Architecture != architecture {
+					t.Errorf("expected architecture to be '%v', got '%v'", architecture, *image.Architecture)
+				}
+
+				// Check if the image name contains the expected distro and version
+				expectedNamePart := fmt.Sprintf("%s-%s", tc.input.Version, tc.input.Architecture)
+				if !strings.Contains(*image.Name, expectedNamePart) {
+					t.Errorf("expected image name to contain '%v', got '%v'", expectedNamePart, *image.Name)
+				}
+			}
+
+			if (gotError != nil) != tc.expectErr {
+				t.Errorf("expected error to be %v, got %v", tc.expectErr, gotError != nil)
+			}
+		})
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -14,6 +15,12 @@ import (
 // Connection contains all of the relevant
 // information to maintain
 // an EC2 connection.
+//
+// **Attributes:**
+//
+// Client: an EC2 session
+// Reservation: an EC2 reservation
+// Params: parameters for an EC2 instance
 type Connection struct {
 	Client      *ec2.EC2
 	Reservation *ec2.Reservation
@@ -22,6 +29,22 @@ type Connection struct {
 
 // Params provides parameter
 // options for an EC2 instance.
+//
+// **Attributes:**
+//
+// AssociatePublicIPAddress: whether or not to associate a public IP address
+// ImageID: the AMI ID to use
+// InstanceProfile: the IAM instance profile to use
+// InstanceType: the instance type to use
+// MinCount: the minimum number of instances to launch
+// MaxCount: the maximum number of instances to launch
+// SecurityGroupIDs: the security group IDs to use
+// KeyName: the key name to use
+// SubnetID: the subnet ID to use
+// VolumeSize: the volume size to use
+// InstanceID: the instance ID to use
+// InstanceName: the instance name to use
+// PublicIP: the public IP to use
 type Params struct {
 	AssociatePublicIPAddress bool
 	ImageID                  string
@@ -38,9 +61,23 @@ type Params struct {
 	PublicIP                 string
 }
 
-var (
-	metadataEndpoint string
-)
+// AMIInfo provides information
+// about an AMI.
+//
+// **Attributes:**
+//
+// Distro: the distro to use
+// Version: the version to use
+// Architecture: the architecture to use
+// Region: the region to use
+type AMIInfo struct {
+	Distro       string
+	Version      string
+	Architecture string
+	Region       string
+}
+
+var metadataEndpoint string
 
 // createClient is a helper function that
 // returns a new ec2 session.
@@ -322,4 +359,120 @@ func GetInstancesRunningForMoreThan24Hours(client *ec2.EC2) ([]*ec2.Instance, er
 	}
 
 	return instancesOver24Hours, nil
+}
+
+// GetLatestAMI retrieves the latest Amazon Machine Image (AMI) for a
+// specified distribution, version and architecture. It utilizes AWS SDK
+// to query AWS EC2 for the AMIs matching the provided pattern and returns
+// the latest one based on the creation date.
+//
+// **Parameters:**
+//
+// info: An AMIInfo struct containing necessary details like Distro,
+// Version, Architecture, and Region for which the AMI needs to be retrieved.
+//
+// **Returns:**
+//
+// string: The ID of the latest AMI found based on the provided information.
+//
+// error: An error if any issue occurs while trying to get the latest AMI.
+func GetLatestAMI(info AMIInfo) (string, error) {
+	versionToAMIName := map[string]map[string]map[string]string{
+		"ubuntu": {
+			"22.04": {
+				"amd64": "ubuntu/images/hvm-ssd/ubuntu-jammy-%s-amd64-server-*",
+				"arm64": "ubuntu/images/hvm-ssd/ubuntu-jammy-%s-arm64-server-*",
+			},
+			"20.04": {
+				"amd64": "ubuntu/images/hvm-ssd/ubuntu-focal-%s-amd64-server-*",
+				"arm64": "ubuntu/images/hvm-ssd/ubuntu-focal-%s-arm64-server-*",
+			},
+			"18.04": {
+				"amd64": "ubuntu/images/hvm-ssd/ubuntu-bionic-%s-amd64-server-*",
+				"arm64": "ubuntu/images/hvm-ssd/ubuntu-bionic-%s-arm64-server-*",
+			},
+		},
+		"centos": {
+			"7": {
+				"x86_64": "CentOS Linux %s x86_64 HVM EBS*",
+				"arm64":  "CentOS Linux %s arm64 HVM EBS*",
+			},
+			"8": {
+				"x86_64": "CentOS %s AMI*",
+				"arm64":  "CentOS %s ARM64 AMI*",
+			},
+		},
+		"debian": {
+			"10": {
+				"amd64": "debian-%s-buster-hvm-amd64-gp2*",
+				"arm64": "debian-%s-buster-hvm-arm64-gp2*",
+			},
+		},
+		"kali": {
+			"2023.1": {
+				"amd64": "kali-linux-%s-amd64*",
+				"arm64": "kali-linux-%s-arm64*",
+			},
+		},
+	}
+
+	distToOwner := map[string]string{
+		"ubuntu": "099720109477", // Canonical
+		// Add other distros and their owners here...
+	}
+
+	owner, ok := distToOwner[info.Distro]
+	if !ok {
+		return "", fmt.Errorf("unsupported distribution: %s", info.Distro)
+	}
+
+	amiNamePattern, ok := versionToAMIName[info.Distro][info.Version][info.Architecture]
+	if !ok {
+		return "", fmt.Errorf("unsupported distribution/version/architecture: %s/%s/%s", info.Distro, info.Version, info.Architecture)
+	}
+
+	amiNamePattern = fmt.Sprintf(amiNamePattern, info.Version)
+
+	fmt.Println(amiNamePattern)
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(info.Region),
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	svc := ec2.New(sess)
+
+	input := &ec2.DescribeImagesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("name"),
+				Values: []*string{aws.String(amiNamePattern + "*")},
+			},
+		},
+		Owners: []*string{aws.String(owner)},
+	}
+
+	result, err := svc.DescribeImages(input)
+	if err != nil {
+		return "", err
+	}
+
+	if len(result.Images) == 0 {
+		return "", fmt.Errorf("no images found for distro: %s, version: %s, "+
+			"architecture: %s", info.Distro, info.Version, info.Architecture)
+	}
+
+	// Sort images by CreationDate in descending order
+	sort.Slice(result.Images, func(i, j int) bool {
+		iTime, _ := time.Parse(time.RFC3339, *result.Images[i].CreationDate)
+		jTime, _ := time.Parse(time.RFC3339, *result.Images[j].CreationDate)
+		return iTime.After(jTime)
+	})
+
+	// Get the latest image (first image after sorting in descending order)
+	latestImage := result.Images[0]
+
+	return *latestImage.ImageId, nil
 }
