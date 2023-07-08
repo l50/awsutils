@@ -111,11 +111,6 @@ func GetBuckets(client *s3.S3) ([]*s3.Bucket, error) {
 		return result.Buckets, err
 	}
 
-	for _, b := range result.Buckets {
-		fmt.Printf("* %s created on %s\n",
-			aws.StringValue(b.Name), aws.TimeValue(b.CreationDate))
-	}
-
 	return result.Buckets, nil
 }
 
