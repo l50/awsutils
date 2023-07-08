@@ -319,16 +319,7 @@ func GetInstanceState(client *ec2.EC2, instanceID string) (string, error) {
 // returns true. If the file does not exist, the function returns false,
 // indicating that the code is not running on an EC2 instance.
 //
-// Example usage:
-//
-//	isEC2 := IsEC2Instance()
-//	if isEC2 {
-//		fmt.Println("Running on an EC2 instance")
-//	} else {
-//		fmt.Println("Not running on an EC2 instance")
-//	}
-//
-// Returns:
+// **Returns:**
 //
 // bool: A boolean value that indicates whether the code is running on an EC2 instance.
 func IsEC2Instance() bool {

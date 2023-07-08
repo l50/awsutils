@@ -22,16 +22,18 @@ Table of contents:
 AgentReady(ssmiface.SSMAPI, string, time.Duration) bool, error
 ```
 
-AgentReady checks if an SSM agent is ready.
-Inputs:
+AgentReady checks if an SSM agent is ready on the instance.
 
-    svc is an Amazon SSM service client
-    name is the name of the parameter
+**Parameters:**
 
-Output:
+svc: AWS SSM service client.
+instanceID: AWS EC2 instance ID to check.
+waitTime: Maximum wait time before timing out.
 
-    If success, return true and nil
-    Otherwise, return false and an error from the call to DescribeInstanceInformation
+**Returns:**
+
+bool: True if the agent is ready, false otherwise.
+error: An error if any issue occurs while checking the agent.
 
 ---
 
@@ -42,14 +44,16 @@ CheckAWSCLIInstalled(ssmiface.SSMAPI, string) bool, error
 ```
 
 CheckAWSCLIInstalled checks if AWS CLI is installed on the instance.
-Inputs:
 
-    svc is an Amazon SSM service client
-    instanceID is the instance to check
+**Parameters:**
 
-Output:
+svc: AWS SSM service client.
+instanceID: AWS EC2 instance ID to check.
 
-    If successful, return true and nil. If AWS CLI is not installed or an error occurred, return false and the error.
+**Returns:**
+
+bool: True if AWS CLI is installed, false otherwise.
+error: An error if any issue occurs while checking the installation.
 
 ---
 
@@ -59,8 +63,11 @@ Output:
 CreateConnection() Connection
 ```
 
-CreateConnection creates a connection
-with SSM and returns it.
+CreateConnection establishes a connection with AWS SSM.
+
+**Returns:**
+
+Connection: Struct with a connected SSM client and session.
 
 ---
 
@@ -70,16 +77,16 @@ with SSM and returns it.
 DeleteParam(ssmiface.SSMAPI, string) error
 ```
 
-DeleteParam deletes a parameter in SSM
-Inputs:
+DeleteParam removes a parameter from AWS SSM.
 
-    svc is an Amazon SSM service client
-    name is the name of the parameter
+**Parameters:**
 
-Output:
+svc: AWS SSM service client.
+name: Name of the parameter to delete.
 
-    If success, information about the parameter and nil
-    Otherwise, nil and an error from the call to DeleteParam
+**Returns:**
+
+error: An error if any issue occurs while deleting the parameter.
 
 ---
 
@@ -89,18 +96,36 @@ Output:
 GetParam(ssmiface.SSMAPI, string) string, error
 ```
 
-GetParam fetches details of a parameter in SSM
-Inputs:
+GetParam retrieves a parameter from AWS SSM.
 
-    svc is an Amazon SSM service client
-    name is the name of the parameter
-    value is the value of the parameter
-    paramType is the type of parameter
+**Parameters:**
 
-Output:
+svc: AWS SSM service client.
+name: Name of the parameter.
 
-    If success, information about the parameter and nil
-    Otherwise, nil and an error from the call to GetParam
+**Returns:**
+
+string: Value of the parameter.
+error: An error if any issue occurs while fetching the parameter.
+
+---
+
+### ListAllParameters(ssmiface.SSMAPI)
+
+```go
+ListAllParameters(ssmiface.SSMAPI) []*ssm.ParameterMetadata, error
+```
+
+ListAllParameters retrieves all parameters in the AWS SSM.
+
+**Parameters:**
+
+svc: AWS SSM service client.
+
+**Returns:**
+
+([]*ssm.ParameterMetadata): List of all parameters' metadata.
+error: An error if any issue occurs while fetching the parameters.
 
 ---
 
@@ -110,20 +135,19 @@ Output:
 PutParam(ssmiface.SSMAPI, string, string, string, bool) error
 ```
 
-PutParam creates a parameter in SSM
-Inputs:
+PutParam creates or updates a parameter in AWS SSM.
 
-    svc is an Amazon SSM service client
-    name is the name of the parameter
-    value is the value of the parameter
-    type is the type of parameter
-    overwrite sets the flag to rewrite
-    a parameter value
+**Parameters:**
 
-Output:
+svc: AWS SSM service client.
+name: Name of the parameter.
+value: Value of the parameter.
+paramType: Type of the parameter.
+overwrite: Flag to overwrite an existing parameter.
 
-    If success, information about the parameter and nil
-    Otherwise, nil and an error from the call to PutParam
+**Returns:**
+
+error: An error if any issue occurs while creating or updating the parameter.
 
 ---
 
@@ -133,16 +157,18 @@ Output:
 RunCommand(ssmiface.SSMAPI, string, []string) string, error
 ```
 
-RunCommand runs an input command using SSM.
-Inputs:
+RunCommand executes an input command on an AWS instance via SSM.
 
-    svc is an Amazon SSM service client
-    instanceID is the instance to run the command on
-    command is the command to run
+**Parameters:**
 
-Output:
+svc: AWS SSM service client.
+instanceID: AWS EC2 instance ID where the command should run.
+command: List of command strings to be run.
 
-    If successful, the command output and nil will be returned.
+**Returns:**
+
+string: Output of the command execution.
+error: An error if any issue occurs while executing the command.
 
 ---
 

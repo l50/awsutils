@@ -76,7 +76,8 @@ GetSecret returns the value of an input `secretName`.
 ReplicateSecret(Connection, string, string, []string) error
 ```
 
-ReplicateSecret replicates a secret with the specified `secretName` to multiple target regions.
+ReplicateSecret replicates a secret with the specified `secretName`
+to multiple target regions.
 
 ---
 

@@ -200,7 +200,8 @@ func GetSecret(client *secretsmanager.SecretsManager, secretName string) (string
 	return *secret.SecretString, nil
 }
 
-// ReplicateSecret replicates a secret with the specified `secretName` to multiple target regions.
+// ReplicateSecret replicates a secret with the specified `secretName`
+// to multiple target regions.
 func ReplicateSecret(connection Connection, secretName string, newSecretName string, targetRegions []string) error {
 	// Get the existing secret value
 	secretValue, err := GetSecret(connection.Client, secretName)

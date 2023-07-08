@@ -11,17 +11,28 @@ import (
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 )
 
-// Connection contains all of the relevant
-// information to maintain
-// an SSM connection.
+// Connection represents the necessary information to maintain
+// an AWS Systems Manager (SSM) connection.
+//
+// **Attributes:**
+//
+// Client:  Amazon SSM service client interface.
+// Session: AWS session from which the client is derived.
+// Params:  Structure with parameters for the SSM service.
 type Connection struct {
 	Client  ssmiface.SSMAPI
 	Session *session.Session
 	Params  Params
 }
 
-// Params provides parameter
-// options for SSM.
+// Params represents parameter options for SSM.
+//
+// **Attributes:**
+//
+// Name:      Parameter name.
+// Value:     Parameter value.
+// Type:      Parameter type.
+// Overwrite: Flag to overwrite an existing parameter.
 type Params struct {
 	Name      string
 	Value     string
@@ -29,30 +40,35 @@ type Params struct {
 	Overwrite bool
 }
 
-// createClient is a helper function that
-// returns a new ssm session.
+// createClient generates a new AWS session and an SSM service client.
+//
+// **Returns:**
+//
+// ssmiface.SSMAPI: Interface for Amazon SSM service client.
+// *session.Session: AWS session.
 func createClient() (ssmiface.SSMAPI, *session.Session) {
 	sess := session.Must(session.NewSessionWithOptions(
 		session.Options{
 			SharedConfigState: session.SharedConfigEnable,
 		}))
 
-	// Create SSM service client
 	svc := ssm.New(sess)
 
 	return svc, sess
 }
 
-// AgentReady checks if an SSM agent is ready.
-// Inputs:
+// AgentReady checks if an SSM agent is ready on the instance.
 //
-//	svc is an Amazon SSM service client
-//	name is the name of the parameter
+// **Parameters:**
 //
-// Output:
+// svc: AWS SSM service client.
+// instanceID: AWS EC2 instance ID to check.
+// waitTime: Maximum wait time before timing out.
 //
-//	If success, return true and nil
-//	Otherwise, return false and an error from the call to DescribeInstanceInformation
+// **Returns:**
+//
+// bool: True if the agent is ready, false otherwise.
+// error: An error if any issue occurs while checking the agent.
 func AgentReady(svc ssmiface.SSMAPI, instanceID string, waitTime time.Duration) (bool, error) {
 	timeout := time.After(waitTime * time.Second)
 	ticker := time.NewTicker(500 * time.Millisecond)
@@ -63,7 +79,7 @@ func AgentReady(svc ssmiface.SSMAPI, instanceID string, waitTime time.Duration) 
 		select {
 		case <-timeout:
 			return false, errors.New("timed out")
-		case <-ticker.C: // Listen for the ticker's channel
+		case <-ticker.C:
 			data, err := svc.DescribeInstanceInformation(input)
 			if err != nil {
 				return false, err
@@ -83,14 +99,16 @@ func AgentReady(svc ssmiface.SSMAPI, instanceID string, waitTime time.Duration) 
 }
 
 // CheckAWSCLIInstalled checks if AWS CLI is installed on the instance.
-// Inputs:
 //
-//	svc is an Amazon SSM service client
-//	instanceID is the instance to check
+// **Parameters:**
 //
-// Output:
+// svc: AWS SSM service client.
+// instanceID: AWS EC2 instance ID to check.
 //
-//	If successful, return true and nil. If AWS CLI is not installed or an error occurred, return false and the error.
+// **Returns:**
+//
+// bool: True if AWS CLI is installed, false otherwise.
+// error: An error if any issue occurs while checking the installation.
 func CheckAWSCLIInstalled(svc ssmiface.SSMAPI, instanceID string) (bool, error) {
 	command := []string{"command -v aws"}
 	output, err := RunCommand(svc, instanceID, command)
@@ -98,7 +116,6 @@ func CheckAWSCLIInstalled(svc ssmiface.SSMAPI, instanceID string) (bool, error) 
 		return false, err
 	}
 
-	// AWS CLI is not installed if the output is empty
 	if output == "" {
 		return false, errors.New("AWS CLI is not installed on the instance")
 	}
@@ -106,8 +123,11 @@ func CheckAWSCLIInstalled(svc ssmiface.SSMAPI, instanceID string) (bool, error) 
 	return true, nil
 }
 
-// CreateConnection creates a connection
-// with SSM and returns it.
+// CreateConnection establishes a connection with AWS SSM.
+//
+// **Returns:**
+//
+// Connection: Struct with a connected SSM client and session.
 func CreateConnection() Connection {
 	ssmConnection := Connection{}
 	ssmConnection.Client, ssmConnection.Session = createClient()
@@ -115,16 +135,16 @@ func CreateConnection() Connection {
 	return ssmConnection
 }
 
-// DeleteParam deletes a parameter in SSM
-// Inputs:
+// DeleteParam removes a parameter from AWS SSM.
 //
-//	svc is an Amazon SSM service client
-//	name is the name of the parameter
+// **Parameters:**
 //
-// Output:
+// svc: AWS SSM service client.
+// name: Name of the parameter to delete.
 //
-//	If success, information about the parameter and nil
-//	Otherwise, nil and an error from the call to DeleteParam
+// **Returns:**
+//
+// error: An error if any issue occurs while deleting the parameter.
 func DeleteParam(svc ssmiface.SSMAPI, name string) error {
 	_, err := svc.DeleteParameter(&ssm.DeleteParameterInput{
 		Name: aws.String(name),
@@ -133,20 +153,19 @@ func DeleteParam(svc ssmiface.SSMAPI, name string) error {
 	return err
 }
 
-// PutParam creates a parameter in SSM
-// Inputs:
+// PutParam creates or updates a parameter in AWS SSM.
 //
-//	svc is an Amazon SSM service client
-//	name is the name of the parameter
-//	value is the value of the parameter
-//	type is the type of parameter
-//	overwrite sets the flag to rewrite
-//	a parameter value
+// **Parameters:**
 //
-// Output:
+// svc: AWS SSM service client.
+// name: Name of the parameter.
+// value: Value of the parameter.
+// paramType: Type of the parameter.
+// overwrite: Flag to overwrite an existing parameter.
 //
-//	If success, information about the parameter and nil
-//	Otherwise, nil and an error from the call to PutParam
+// **Returns:**
+//
+// error: An error if any issue occurs while creating or updating the parameter.
 func PutParam(svc ssmiface.SSMAPI, name string, value string, paramType string, overwrite bool) error {
 	_, err := svc.PutParameter(&ssm.PutParameterInput{
 		Name:      aws.String(name),
@@ -158,18 +177,17 @@ func PutParam(svc ssmiface.SSMAPI, name string, value string, paramType string, 
 	return err
 }
 
-// GetParam fetches details of a parameter in SSM
-// Inputs:
+// GetParam retrieves a parameter from AWS SSM.
 //
-//	svc is an Amazon SSM service client
-//	name is the name of the parameter
-//	value is the value of the parameter
-//	paramType is the type of parameter
+// **Parameters:**
 //
-// Output:
+// svc: AWS SSM service client.
+// name: Name of the parameter.
 //
-//	If success, information about the parameter and nil
-//	Otherwise, nil and an error from the call to GetParam
+// **Returns:**
+//
+// string: Value of the parameter.
+// error: An error if any issue occurs while fetching the parameter.
 func GetParam(svc ssmiface.SSMAPI, name string) (string, error) {
 
 	results, err := svc.GetParameter(&ssm.GetParameterInput{
@@ -183,16 +201,18 @@ func GetParam(svc ssmiface.SSMAPI, name string) (string, error) {
 	return *results.Parameter.Value, err
 }
 
-// RunCommand runs an input command using SSM.
-// Inputs:
+// RunCommand executes an input command on an AWS instance via SSM.
 //
-//	svc is an Amazon SSM service client
-//	instanceID is the instance to run the command on
-//	command is the command to run
+// **Parameters:**
 //
-// Output:
+// svc: AWS SSM service client.
+// instanceID: AWS EC2 instance ID where the command should run.
+// command: List of command strings to be run.
 //
-//	If successful, the command output and nil will be returned.
+// **Returns:**
+//
+// string: Output of the command execution.
+// error: An error if any issue occurs while executing the command.
 func RunCommand(svc ssmiface.SSMAPI, instanceID string, command []string) (string, error) {
 	params := map[string][]*string{"commands": aws.StringSlice(command)}
 	docName := "AWS-RunShellScript"
@@ -210,27 +230,41 @@ func RunCommand(svc ssmiface.SSMAPI, instanceID string, command []string) (strin
 
 	commandID := *inputResult.Command.CommandId
 	fmt.Printf("Now running %s on %s\n", command[0], instanceID)
-	// Get output and check it for twenty iterations
-	var i int
-	for i = 0; i < 20; i++ {
 
-		// Sleep for five seconds before attempting to
-		// retrieve output.
+	for i := 0; i < 20; i++ {
 		time.Sleep(5 * time.Second)
 		output, _ := svc.GetCommandInvocation(&ssm.GetCommandInvocationInput{
 			CommandId:  aws.String(commandID),
 			InstanceId: aws.String(instanceID),
 		})
-
-		// Return command output if it's available
-		if output.Status != nil {
-			if *output.Status != "InProgress" {
+		if *output.Status != "InProgress" {
+			if *output.Status == "Success" {
 				return *output.StandardOutputContent, nil
 			}
+			return "", errors.New(*output.StandardErrorContent)
 		}
-
-		i++
 	}
 
-	return "", errors.New("failed to run command")
+	return "", errors.New("command timed out")
+}
+
+// ListAllParameters retrieves all parameters in the AWS SSM.
+//
+// **Parameters:**
+//
+// svc: AWS SSM service client.
+//
+// **Returns:**
+//
+// ([]*ssm.ParameterMetadata): List of all parameters' metadata.
+// error: An error if any issue occurs while fetching the parameters.
+func ListAllParameters(svc ssmiface.SSMAPI) ([]*ssm.ParameterMetadata, error) {
+	input := &ssm.DescribeParametersInput{}
+	result, err := svc.DescribeParameters(input)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Parameters, nil
 }

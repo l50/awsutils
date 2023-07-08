@@ -1,7 +1,0 @@
-export AMI=TODO
-export INST_NAME=TODO
-export INST_TYPE=t2.micro
-export INST_PROFILE=AmazonSSMInstanceProfileForInstances
-export SEC_GRP_ID=TODO
-export SUBNET_ID=TODO
-export VOLUME_SIZE=100
