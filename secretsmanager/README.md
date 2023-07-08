@@ -27,7 +27,7 @@ with Secrets Manager and returns it.
 
 ---
 
-### CreateOrUpdateSecret(\*secretsmanager.SecretsManager, string, string, string)
+### CreateOrUpdateSecret(*secretsmanager.SecretsManager, string, string, string)
 
 ```go
 CreateOrUpdateSecret(*secretsmanager.SecretsManager string string string) error
@@ -37,7 +37,7 @@ CreateOrUpdateSecret creates a new secret or updates an existing one.
 
 ---
 
-### CreateSecret(\*secretsmanager.SecretsManager, string, string, string)
+### CreateSecret(*secretsmanager.SecretsManager, string, string, string)
 
 ```go
 CreateSecret(*secretsmanager.SecretsManager, string, string, string) error
@@ -48,7 +48,7 @@ with the specified `secretValue`.
 
 ---
 
-### DeleteSecret(\*secretsmanager.SecretsManager, string, bool)
+### DeleteSecret(*secretsmanager.SecretsManager, string, bool)
 
 ```go
 DeleteSecret(*secretsmanager.SecretsManager, string, bool) error
@@ -60,7 +60,7 @@ is set to true.
 
 ---
 
-### GetSecret(\*secretsmanager.SecretsManager, string)
+### GetSecret(*secretsmanager.SecretsManager, string)
 
 ```go
 GetSecret(*secretsmanager.SecretsManager, string) string, error
@@ -80,7 +80,7 @@ ReplicateSecret replicates a secret with the specified `secretName` to multiple 
 
 ---
 
-### UpdateSecret(\*secretsmanager.SecretsManager, string, string)
+### UpdateSecret(*secretsmanager.SecretsManager, string, string)
 
 ```go
 UpdateSecret(*secretsmanager.SecretsManager, string, string) error
@@ -115,7 +115,7 @@ import "github.com/awsutils/l50/secretsmanager"
 ## Tests
 
 To ensure the package is working correctly, run the following
-command to execute the tests for `awsutils/secretsmanager`:
+command to execute the tests for `secretsmanager/awsutils`:
 
 ```bash
 go test -v

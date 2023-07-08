@@ -171,7 +171,7 @@ import "github.com/awsutils/l50/ssm"
 ## Tests
 
 To ensure the package is working correctly, run the following
-command to execute the tests for `awsutils/ssm`:
+command to execute the tests for `ssm/awsutils`:
 
 ```bash
 go test -v

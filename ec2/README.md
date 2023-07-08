@@ -16,7 +16,7 @@ Table of contents:
 
 ## Functions
 
-### CheckInstanceExists(\*ec2.EC2, string)
+### CheckInstanceExists(*ec2.EC2, string)
 
 ```go
 CheckInstanceExists(*ec2.EC2, string) error
@@ -37,7 +37,7 @@ with EC2 and returns a Connection.
 
 ---
 
-### CreateInstance(\*ec2.EC2, Params)
+### CreateInstance(*ec2.EC2, Params)
 
 ```go
 CreateInstance(*ec2.EC2, Params) *ec2.Reservation, error
@@ -48,7 +48,7 @@ that is created with the input ec2Params.
 
 ---
 
-### DestroyInstance(\*ec2.EC2, string)
+### DestroyInstance(*ec2.EC2, string)
 
 ```go
 DestroyInstance(*ec2.EC2, string) error
@@ -59,7 +59,7 @@ the input instanceID.
 
 ---
 
-### GetInstanceID(\*ec2.Instance)
+### GetInstanceID(*ec2.Instance)
 
 ```go
 GetInstanceID(*ec2.Instance) string
@@ -70,7 +70,7 @@ from an input instanceReservation.
 
 ---
 
-### GetInstancePublicIP(\*ec2.EC2, string)
+### GetInstancePublicIP(*ec2.EC2, string)
 
 ```go
 GetInstancePublicIP(*ec2.EC2, string) string, error
@@ -81,7 +81,7 @@ of the input instanceID.
 
 ---
 
-### GetInstanceState(\*ec2.EC2, string)
+### GetInstanceState(*ec2.EC2, string)
 
 ```go
 GetInstanceState(*ec2.EC2, string) string, error
@@ -105,7 +105,7 @@ be returned by default.
 
 ---
 
-### GetInstancesRunningForMoreThan24Hours(\*ec2.EC2)
+### GetInstancesRunningForMoreThan24Hours(*ec2.EC2)
 
 ```go
 GetInstancesRunningForMoreThan24Hours(*ec2.EC2) []*ec2.Instance, error
@@ -140,7 +140,7 @@ error: An error if any issue occurs while trying to get the latest AMI.
 
 ---
 
-### GetRegion(\*ec2.EC2)
+### GetRegion(*ec2.EC2)
 
 ```go
 GetRegion(*ec2.EC2) string, error
@@ -151,7 +151,7 @@ ec2 client.
 
 ---
 
-### GetRunningInstances(\*ec2.EC2)
+### GetRunningInstances(*ec2.EC2)
 
 ```go
 GetRunningInstances(*ec2.EC2) *ec2.DescribeInstancesOutput, error
@@ -189,7 +189,7 @@ bool: A boolean value that indicates whether the code is running on an EC2 insta
 
 ---
 
-### TagInstance(\*ec2.EC2, string, string, string)
+### TagInstance(*ec2.EC2, string, string, string)
 
 ```go
 TagInstance(*ec2.EC2, string, string, string) error
@@ -199,7 +199,7 @@ TagInstance tags the instance tied to the input ID with the specified tag.
 
 ---
 
-### WaitForInstance(\*ec2.EC2, string)
+### WaitForInstance(*ec2.EC2, string)
 
 ```go
 WaitForInstance(*ec2.EC2, string) error
@@ -235,7 +235,7 @@ import "github.com/awsutils/l50/ec2"
 ## Tests
 
 To ensure the package is working correctly, run the following
-command to execute the tests for `awsutils/ec2`:
+command to execute the tests for `ec2/awsutils`:
 
 ```bash
 go test -v

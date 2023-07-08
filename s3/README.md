@@ -16,7 +16,7 @@ Table of contents:
 
 ## Functions
 
-### CreateBucket(\*s3.S3, string)
+### CreateBucket(*s3.S3, string)
 
 ```go
 CreateBucket(*s3.S3, string) error
@@ -48,7 +48,7 @@ An s3.Connection struct containing the AWS S3 client and AWS session.
 
 ---
 
-### DestroyBucket(\*s3.S3, string)
+### DestroyBucket(*s3.S3, string)
 
 ```go
 DestroyBucket(*s3.S3, string) error
@@ -66,7 +66,7 @@ error: An error if the bucket could not be destroyed.
 
 ---
 
-### DownloadBucketFile(\*session.Session, string, string, string)
+### DownloadBucketFile(*session.Session, string, string, string)
 
 ```go
 DownloadBucketFile(*session.Session, string, string, string) string, error
@@ -87,7 +87,7 @@ error: An error if the file could not be downloaded.
 
 ---
 
-### EmptyBucket(\*s3.S3, string)
+### EmptyBucket(*s3.S3, string)
 
 ```go
 EmptyBucket(*s3.S3, string) error
@@ -104,7 +104,7 @@ error: An error if the bucket could not be emptied.
 
 ---
 
-### GetBuckets(\*s3.S3)
+### GetBuckets(*s3.S3)
 
 ```go
 GetBuckets(*s3.S3) []*s3.Bucket, error
@@ -117,12 +117,12 @@ Parameters:
 client: An AWS S3 client.
 
 Returns:
-[]\*s3.Bucket: A slice of pointers to AWS S3 bucket structs that the client has access to.
+[]*s3.Bucket: A slice of pointers to AWS S3 bucket structs that the client has access to.
 error: An error if the buckets could not be listed.
 
 ---
 
-### UploadBucketDir(\*session.Session, string, string)
+### UploadBucketDir(*session.Session, string, string)
 
 ```go
 UploadBucketDir(*session.Session, string, string) error
@@ -141,7 +141,7 @@ error: An error if the directory could not be uploaded.
 
 ---
 
-### UploadBucketFile(\*session.Session, string, string)
+### UploadBucketFile(*session.Session, string, string)
 
 ```go
 UploadBucketFile(*session.Session, string, string) error
@@ -185,7 +185,7 @@ import "github.com/awsutils/l50/s3"
 ## Tests
 
 To ensure the package is working correctly, run the following
-command to execute the tests for `awsutils/s3`:
+command to execute the tests for `s3/awsutils`:
 
 ```bash
 go test -v

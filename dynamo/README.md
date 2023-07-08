@@ -27,7 +27,7 @@ with DynamoDB and returns it.
 
 ---
 
-### CreateTable(\*dynamodb.DynamoDB, string)
+### CreateTable(*dynamodb.DynamoDB, string)
 
 ```go
 CreateTable(*dynamodb.DynamoDB, string) error
@@ -38,7 +38,7 @@ CreateTable creates a table with the input
 
 ---
 
-### DestroyTable(\*dynamodb.DynamoDB, string)
+### DestroyTable(*dynamodb.DynamoDB, string)
 
 ```go
 DestroyTable(*dynamodb.DynamoDB, string) error
@@ -48,7 +48,7 @@ DestroyTable destroys the input table.
 
 ---
 
-### GetRegion(\*dynamodb.DynamoDB)
+### GetRegion(*dynamodb.DynamoDB)
 
 ```go
 GetRegion(*dynamodb.DynamoDB) string, error
@@ -59,7 +59,7 @@ dynamo client.
 
 ---
 
-### GetTables(\*dynamodb.DynamoDB)
+### GetTables(*dynamodb.DynamoDB)
 
 ```go
 GetTables(*dynamodb.DynamoDB) []*string, error
@@ -72,7 +72,7 @@ https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/dynamo-example-list-ta
 
 ---
 
-### WaitForTable(\*dynamodb.DynamoDB, string)
+### WaitForTable(*dynamodb.DynamoDB, string)
 
 ```go
 WaitForTable(*dynamodb.DynamoDB, string) error
@@ -108,7 +108,7 @@ import "github.com/awsutils/l50/dynamo"
 ## Tests
 
 To ensure the package is working correctly, run the following
-command to execute the tests for `awsutils/dynamo`:
+command to execute the tests for `dynamo/awsutils`:
 
 ```bash
 go test -v
