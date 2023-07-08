@@ -1,6 +1,33 @@
 ---
 area/github:
   - ".github/**/*"
+
 area/pre-commit:
   - ".pre-commit-config.yaml"
   - ".hooks/**/*"
+
+area/dynamo:
+  - "dynamo/*.go"
+
+area/secretsmanager:
+  - "secretsmanager/*.go"
+
+area/ssm:
+  - "ssm/*.go"
+
+area/ec2:
+  - "ec2/*.go"
+
+area/s3:
+  - "s3/*.go"
+
+area/magefiles:
+  - "magefiles/*"
+
+area/asdf:
+  - ".asdf"
+  - ".tool-versions"
+
+area/go-mod-sum:
+  - "go.mod"
+  - "go.sum"
