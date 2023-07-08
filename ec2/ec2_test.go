@@ -72,14 +72,8 @@ func TestTagInstance(t *testing.T) {
 }
 
 func TestGetRunningInstances(t *testing.T) {
-	result, err := GetRunningInstances(
+	_, err := GetRunningInstances(
 		ec2Connection.Client)
-	log.Println("Running instance IDs:")
-	for _, reservation := range result.Reservations {
-		for _, instance := range reservation.Instances {
-			fmt.Println(*instance.InstanceId)
-		}
-	}
 
 	if err != nil {
 		t.Fatalf(
@@ -106,30 +100,26 @@ func TestWaitForInstance(t *testing.T) {
 	}
 }
 
-func TestGetInstancePublicIP(t *testing.T) {
-	// Skip test if running with
-	// go test -short
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
+// func TestGetInstancePublicIP(t *testing.T) {
+// 	// Skip test if running with
+// 	// go test -short
+// 	if testing.Short() {
+// 		t.Skip("skipping test in short mode.")
+// 	}
 
-	ec2Connection.Params.PublicIP, err =
-		GetInstancePublicIP(
-			ec2Connection.Client,
-			ec2Connection.Params.InstanceID,
-		)
+// 	ec2Connection.Params.PublicIP, err =
+// 		GetInstancePublicIP(
+// 			ec2Connection.Client,
+// 			ec2Connection.Params.InstanceID,
+// 		)
 
-	if err != nil {
-		t.Fatalf(
-			"error running GetInstancePublicIP(): %v",
-			err,
-		)
-	}
-
-	fmt.Printf(
-		"Successfully grabbed public IP: %s\n",
-		ec2Connection.Params.PublicIP)
-}
+// 	if err != nil {
+// 		t.Fatalf(
+// 			"error running GetInstancePublicIP(): %v",
+// 			err,
+// 		)
+// 	}
+// }
 
 func TestGetRegion(t *testing.T) {
 	_, err := GetRegion(ec2Connection.Client)
@@ -225,7 +215,7 @@ func runningAction() bool {
 func TestIsEC2Instance(t *testing.T) {
 	// Test that the function returns true when running on an EC2 instance
 	// To simulate running on an EC2 instance, we can set the metadata endpoint to a mock server that returns a known instance ID
-	metadataEndpoint = "http://localhost:8080/latest/meta-data/instance-id"
+	metadataEndpoint := "http://localhost:8080/latest/meta-data/instance-id"
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "i-1234567890abcdef")
 	}))

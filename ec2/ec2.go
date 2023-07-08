@@ -77,8 +77,6 @@ type AMIInfo struct {
 	Region       string
 }
 
-var metadataEndpoint string
-
 // createClient is a helper function that
 // returns a new ec2 session.
 func createClient() *ec2.EC2 {
@@ -409,7 +407,8 @@ func GetLatestAMI(info AMIInfo) (string, error) {
 
 	distToOwner := map[string]string{
 		"ubuntu": "099720109477", // Canonical
-		// Add other distros and their owners here...
+		"debian": "136693071363", // Debian
+		"kali":   "679593333241", // Kali Linux
 	}
 
 	owner, ok := distToOwner[info.Distro]

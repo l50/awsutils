@@ -19,3 +19,12 @@ func ExampleGetLatestAMI() {
 
 	log.Println("Latest AMI ID:", amiID)
 }
+
+func ExampleIsEC2Instance() {
+	isEC2 := IsEC2Instance()
+	if isEC2 {
+		log.Println("Running on an EC2 instance")
+	} else {
+		log.Println("Not running on an EC2 instance")
+	}
+}
