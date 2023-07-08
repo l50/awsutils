@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/l50/awsutils/s3"
-	fileutils "github.com/l50/goutils/v2/file"
+	fileutils "github.com/l50/goutils/v2/file/fileutils"
 	"github.com/l50/goutils/v2/str"
 )
 
@@ -67,11 +67,13 @@ func TestS3Functions(t *testing.T) {
 
 			// TestDownloadBucketFile
 			testContent := []byte("teststring123")
-			if err := fileutils.Create(tc.uploadFile, testContent); err != nil {
+			if err := fileutils.Create(tc.uploadFile, testContent, fileutils.CreateFile); err != nil {
 				t.Fatalf("error creating %s: %v", tc.uploadFile, err)
 			}
 
-			if err := fileutils.Append(tc.uploadFile, string(testContent)); err != nil {
+			rf := fileutils.RealFile(tc.uploadFile)
+
+			if err := rf.Append(string(testContent)); err != nil {
 				t.Fatalf("error appending to %s: %v", tc.uploadFile, err)
 			} else {
 				if err := s3.UploadBucketFile(s3Connection.Session, tc.bucketName, tc.uploadFile); err != nil {
