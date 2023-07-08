@@ -62,12 +62,13 @@ This repo is comprised of aws utilities that I use across various go projects.
    mage runPreCommit
    ```
 
-1. Fill out all TODO values in `test_env` files
-   for code that you want to modify and test:
+1. If running tests, create a `test_env` file from `test_env_template`
+   and fill out all TODO values.
+
+   Once all vars are filled out, export them:
 
    ```bash
-   vi ec2/test_env # fill in TODO values
-   source ec2/test_env # export the env vars
+   source test_env
    ```
 
    Alternatively, you can debug with vscode by
