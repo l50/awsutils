@@ -8,12 +8,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
-	utils "github.com/l50/goutils"
+	"github.com/l50/goutils/v2/str"
 )
 
 var (
 	err        error
-	randStr, _ = utils.RandomString(10)
+	randStr, _ = str.GenRandom(10)
 	smParams   = Params{
 		Name:        randStr,
 		Description: "Test Secret",
@@ -58,7 +58,7 @@ func TestGetSecret(t *testing.T) {
 }
 
 func TestReplicateSecret(t *testing.T) {
-	newSecretName, _ := utils.RandomString(10)
+	newSecretName, _ := str.GenRandom(10)
 	targetRegions := []string{"us-west-1", "eu-west-1"}
 
 	if err := ReplicateSecret(smConnection, smParams.Name, newSecretName, targetRegions); err != nil {
@@ -100,7 +100,7 @@ func TestDeleteSecret(t *testing.T) {
 
 func TestUpdateSecret(t *testing.T) {
 	// First, let's create a secret for testing update functionality
-	testName, _ := utils.RandomString(10)
+	testName, _ := str.GenRandom(10)
 	testValue := "InitialValue"
 	err := CreateSecret(smConnection.Client, testName, "Test Secret", testValue)
 	if err != nil {
@@ -132,7 +132,7 @@ func TestUpdateSecret(t *testing.T) {
 }
 
 func TestCreateOrUpdateSecret(t *testing.T) {
-	testName, _ := utils.RandomString(10)
+	testName, _ := str.GenRandom(10)
 	testValue := "InitialValue"
 
 	// Use CreateOrUpdateSecret to create a new secret

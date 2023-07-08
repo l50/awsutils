@@ -12,13 +12,13 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	utils "github.com/l50/goutils"
+	"github.com/l50/goutils/v2/str"
 )
 
 var (
 	err           error
 	verbose       = false
-	volumeSize, _ = utils.StringToInt64(os.Getenv("VOLUME_SIZE"))
+	volumeSize, _ = str.ToInt64(os.Getenv("VOLUME_SIZE"))
 	getPubIP, _   = strconv.ParseBool(os.Getenv("PUB_IP"))
 	ec2Params     = Params{
 		AssociatePublicIPAddress: getPubIP,

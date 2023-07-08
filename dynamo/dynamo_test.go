@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	utils "github.com/l50/goutils"
+	"github.com/l50/goutils/v2/str"
 )
 
 var (
 	err        error
-	randStr, _ = utils.RandomString(10)
+	randStr, _ = str.GenRandom(10)
 	dbParams   = Params{
 		ID:        uuid.New(),
 		TableName: randStr,
