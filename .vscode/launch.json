@@ -6,7 +6,7 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": ".mage/mage_output_file.go",
+      "program": "magefiles/mage_output_file.go",
       "buildFlags": "magefile.go",
       "preLaunchTask": "source_test_env_go && create mage_output_file.go",
       "postDebugTask": "delete mage_output_file.go",
@@ -17,7 +17,7 @@
     {
       "label": "source_test_env_go",
       "type": "shell",
-      "command": "source ./ssm/test_env.sensitive",
+      "command": "source ./test_env.sensitive",
       "options": {
         "cwd": "${workspaceFolder}"
       }
