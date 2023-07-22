@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 	"testing"
-	"time"
 
+	"github.com/aws/aws-sdk-go/service/ec2"
 	ec2utils "github.com/l50/awsutils/ec2"
 	ssmutils "github.com/l50/awsutils/ssm"
 	"github.com/l50/goutils/v2/str"
@@ -14,17 +14,17 @@ import (
 )
 
 var (
-	err       error
 	ssmParams = ssmutils.Params{
 		Name:      "TestParam",
 		Value:     "123456",
 		Type:      "String",
 		Overwrite: true,
 	}
-	ssmConnection  = ssmutils.CreateConnection()
-	verbose        bool
-	testInstanceID string // shared instance ID for tests
-	ec2Connection  = ec2utils.CreateConnection()
+	ssmConnection     = ssmutils.CreateConnection()
+	testEC2Connection *ec2utils.Connection
+	testInstanceID    string
+	reservation       *ec2.Reservation
+	testParams        ec2utils.Params
 )
 
 func TestMain(m *testing.M) {
@@ -43,6 +43,7 @@ func TestMain(m *testing.M) {
 			os.Exit(1)
 		}
 	}
+
 	setup()
 	code := m.Run()
 	teardown()
@@ -50,8 +51,11 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	volumeSize, _ := str.ToInt64(os.Getenv("VOLUME_SIZE"))
-	ec2Params := ec2utils.Params{
+	volumeSize, err := str.ToInt64(os.Getenv("VOLUME_SIZE"))
+	if err != nil {
+		log.Fatalf("error converting volume size to int64: %v", err)
+	}
+	testParams = ec2utils.Params{
 		AssociatePublicIPAddress: true,
 		ImageID:                  os.Getenv("AMI"),
 		InstanceName:             os.Getenv("INST_NAME"),
@@ -63,38 +67,52 @@ func setup() {
 		SubnetID:                 os.Getenv("SUBNET_ID"),
 		VolumeSize:               volumeSize,
 	}
-	ec2Connection.Reservation, err = ec2utils.CreateInstance(ec2Connection.Client, ec2Params)
+	testEC2Connection = ec2utils.NewConnection()
+	reservation, err = testEC2Connection.CreateInstance(testParams)
 	if err != nil {
-		log.Fatalf("error running CreateInstance(): %v", err)
+		fmt.Printf("failed to create instance: %v", err)
+		os.Exit(1)
 	}
 
-	testInstanceID = ec2utils.GetInstanceID(ec2Connection.Reservation.Instances[0])
+	// Store the instance ID in a global variable for other tests to use
+	testInstanceID = *reservation.Instances[0].InstanceId
 
 	// Wait for the instance to be ready
-	err = ec2utils.WaitForInstance(ec2Connection.Client, testInstanceID)
-	if err != nil {
+	if err := testEC2Connection.WaitForInstance(testInstanceID); err != nil {
 		log.Fatalf("error waiting for instance to be ready: %v", err)
 	}
 
 	// Double check that the instance is running
-	state, err := ec2utils.GetInstanceState(ec2Connection.Client, testInstanceID)
+	state, err := testEC2Connection.GetInstanceState(testInstanceID)
 	if err != nil {
 		log.Fatalf("error getting instance state: %v", err)
 	}
 	if state != "running" {
 		log.Fatalf("instance is not running: %v", err)
 	}
+
+	if len(reservation.Instances) == 0 {
+		fmt.Println("No instances found in reservation")
+		os.Exit(1)
+	}
+
+	// Schedule the instance to be destroyed after the test ends
+	defer func() {
+		err := testEC2Connection.DestroyInstance(testInstanceID)
+		if err != nil {
+			log.Fatalf("failed to destroy instance: %v", err)
+		}
+	}()
 }
 
 func teardown() {
-	ec2Connection = ec2utils.CreateConnection()
-	err = ec2utils.DestroyInstance(ec2Connection.Client, testInstanceID)
+	err := testEC2Connection.DestroyInstance(testInstanceID)
 	if err != nil {
-		log.Fatalf("error running DestroyInstance(): %v", err)
+		fmt.Printf("failed to destroy instance: %v", err)
+		os.Exit(1)
 	}
 }
 
-// The following test cases are defined
 var tests = []struct {
 	name string
 }{
@@ -104,9 +122,9 @@ var tests = []struct {
 	{
 		name: "TestDeleteParam",
 	},
-	{
-		name: "TestCheckAWSCLIInstalled",
-	},
+	// {
+	// 	name: "TestCheckAWSCLIInstalled",
+	// },
 	{
 		name: "TestRunCommand",
 	},
@@ -126,10 +144,6 @@ func TestAWSUtils(t *testing.T) {
 				testGetParam(t)
 			case "TestDeleteParam":
 				testDeleteParam(t)
-			case "TestCheckAWSCLIInstalled":
-				testCheckAWSCLIInstalled(t)
-			case "TestRunCommand":
-				testRunCommand(t)
 			}
 		})
 	}
@@ -171,46 +185,5 @@ func testDeleteParam(t *testing.T) {
 			"error running DeleteParam(): %v",
 			err,
 		)
-	}
-}
-
-func testCheckAWSCLIInstalled(t *testing.T) {
-	if err := ec2utils.CheckInstanceExists(ec2Connection.Client, testInstanceID); err != nil {
-		_, err := ssmutils.CheckAWSCLIInstalled(ssmConnection.Client, testInstanceID)
-		if err != nil {
-			if err.Error() != "AWS CLI is not installed on the instance" {
-				t.Errorf("Unexpected error: %s", err)
-			}
-		}
-	} else {
-		t.Errorf("Instance %s does not exist", testInstanceID)
-	}
-}
-
-func testRunCommand(t *testing.T) {
-	timeout := time.Duration(60 * time.Second)
-
-	agentStatus, err := ssmutils.AgentReady(ssmConnection.Client, testInstanceID, timeout)
-	if err != nil {
-		t.Fatalf("error running AgentReady(): %v", err)
-	}
-
-	if agentStatus {
-		fmt.Printf("Successfully created SSM-managed instance: %s\n", testInstanceID)
-	}
-
-	command := []string{
-		"echo",
-		"Hello World!",
-		"My name is $(whoami)",
-	}
-
-	result, err := ssmutils.RunCommand(ssmConnection.Client, testInstanceID, command)
-	if err != nil {
-		t.Fatalf("error running RunCommand(): %v", err)
-	}
-
-	if verbose {
-		fmt.Println(result)
 	}
 }

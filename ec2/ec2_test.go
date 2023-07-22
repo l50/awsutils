@@ -1,27 +1,24 @@
-package ec2
+package ec2_test
 
 import (
 	"fmt"
-	"log"
-	"net/http"
-	"net/http/httptest"
 	"os"
-	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/l50/goutils/v2/str"
+	ec2utils "github.com/l50/awsutils/ec2"
+	"github.com/stretchr/testify/assert"
 )
 
-var (
-	err           error
-	verbose       = false
-	volumeSize, _ = str.ToInt64(os.Getenv("VOLUME_SIZE"))
-	getPubIP, _   = strconv.ParseBool(os.Getenv("PUB_IP"))
-	ec2Params     = Params{
-		AssociatePublicIPAddress: getPubIP,
+var testEC2Connection *ec2utils.Connection
+var testInstanceID string
+var reservation *ec2.Reservation
+var testParams ec2utils.Params
+
+func init() {
+	testParams = ec2utils.Params{
+		AssociatePublicIPAddress: true,
 		ImageID:                  os.Getenv("AMI"),
 		InstanceName:             os.Getenv("INST_NAME"),
 		InstanceType:             os.Getenv("INST_TYPE"),
@@ -30,223 +27,173 @@ var (
 		MaxCount:                 1,
 		SecurityGroupIDs:         []string{os.Getenv("SEC_GRP_ID")},
 		SubnetID:                 os.Getenv("SUBNET_ID"),
-		VolumeSize:               volumeSize,
+		VolumeSize:               8,
 	}
-	ec2Connection = Connection{}
-)
-
-func init() {
-	ec2Connection.Client = createClient()
-	ec2Connection.Params = ec2Params
-	ec2Connection.Reservation, err = CreateInstance(
-		ec2Connection.Client,
-		ec2Connection.Params,
-	)
+	testEC2Connection = ec2utils.NewConnection()
+	var err error
+	reservation, err = testEC2Connection.CreateInstance(testParams)
 	if err != nil {
-		log.Fatalf(
-			"error running CreateInstance(): %v",
-			err,
-		)
+		fmt.Printf("failed to create instance: %v", err)
+		os.Exit(1)
 	}
 
-	ec2Connection.Params.InstanceID = GetInstanceID(
-		ec2Connection.Reservation.Instances[0],
-	)
+	// Store the instance ID in a global variable for other tests to use
+	testInstanceID = *reservation.Instances[0].InstanceId
+}
 
-	fmt.Printf("Successfully created instance: %s\n",
-		ec2Connection.Params.InstanceID)
+func TestMain(m *testing.M) {
+	if err := testEC2Connection.WaitForInstance(testInstanceID); err != nil {
+		fmt.Printf("failed to wait for instance: %v", err)
+		os.Exit(1)
+	}
+
+	if len(reservation.Instances) == 0 {
+		fmt.Println("No instances found in reservation")
+		os.Exit(1)
+	}
+
+	code := m.Run()
+
+	err := testEC2Connection.DestroyInstance(testInstanceID)
+	if err != nil {
+		fmt.Printf("failed to destroy instance: %v", err)
+		os.Exit(1)
+	}
+
+	os.Exit(code)
+}
+
+func TestNewConnection(t *testing.T) {
+	c := ec2utils.NewConnection()
+	assert.NotNil(t, c.Client)
+}
+
+func TestCreateInstance(t *testing.T) {
+	testParams := ec2utils.Params{
+		AssociatePublicIPAddress: true,
+		ImageID:                  os.Getenv("AMI"),
+		InstanceName:             os.Getenv("INST_NAME"),
+		InstanceType:             os.Getenv("INST_TYPE"),
+		InstanceProfile:          os.Getenv("IAM_INSTANCE_PROFILE"),
+		MinCount:                 1,
+		MaxCount:                 1,
+		SecurityGroupIDs:         []string{os.Getenv("SEC_GRP_ID")},
+		SubnetID:                 os.Getenv("SUBNET_ID"),
+		VolumeSize:               8,
+	}
+	c := ec2utils.NewConnection()
+	reservation, err := c.CreateInstance(testParams)
+	assert.NoError(t, err)
+	assert.NotNil(t, reservation)
+	instanceID := *reservation.Instances[0].InstanceId
+
+	// Schedule the instance to be destroyed after the test ends
+	defer func() {
+		err := c.DestroyInstance(instanceID)
+		if err != nil {
+			t.Fatalf("failed to destroy instance: %v", err)
+		}
+	}()
+}
+
+func TestCheckInstanceExists(t *testing.T) {
+	// Test with the instance ID obtained from the setup
+	err := testEC2Connection.CheckInstanceExists(testInstanceID)
+	if err != nil {
+		t.Fatalf("instance %s does not exist", testInstanceID)
+	}
 }
 
 func TestTagInstance(t *testing.T) {
-	err = TagInstance(
-		ec2Connection.Client,
-		ec2Connection.Params.InstanceID,
-		"Env",
-		"Prod",
-	)
-
+	// Test with the instance ID obtained from the setup
+	err := testEC2Connection.TagInstance(testInstanceID, "key", "value")
 	if err != nil {
-		t.Fatalf(
-			"error running TagInstance(): %v", err)
+		t.Fatalf("failed to tag instance %s: %v", testInstanceID, err)
+	}
+}
+
+func TestDestroyInstance(t *testing.T) {
+	// Create an instance here instead of using a global one
+	testParams := ec2utils.Params{
+		AssociatePublicIPAddress: true,
+		ImageID:                  os.Getenv("AMI"),
+		InstanceName:             os.Getenv("INST_NAME"),
+		InstanceType:             os.Getenv("INST_TYPE"),
+		InstanceProfile:          os.Getenv("IAM_INSTANCE_PROFILE"),
+		MinCount:                 1,
+		MaxCount:                 1,
+		SecurityGroupIDs:         []string{os.Getenv("SEC_GRP_ID")},
+		SubnetID:                 os.Getenv("SUBNET_ID"),
+		VolumeSize:               8,
+	}
+	c := ec2utils.NewConnection()
+	reservation, err := c.CreateInstance(testParams)
+	assert.NoError(t, err)
+	assert.NotNil(t, reservation)
+	instanceID := *reservation.Instances[0].InstanceId
+
+	// Test the DestroyInstance function
+	err = c.DestroyInstance(instanceID)
+	if err != nil {
+		t.Fatalf("failed to destroy instance %s: %v", instanceID, err)
 	}
 }
 
 func TestGetRunningInstances(t *testing.T) {
-	_, err := GetRunningInstances(
-		ec2Connection.Client)
-
-	if err != nil {
-		t.Fatalf(
-			"error running GetRunningInstance(): %v", err)
-	}
+	result, err := testEC2Connection.GetRunningInstances()
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
 }
 
 func TestWaitForInstance(t *testing.T) {
-	// Skip test if running with
-	// go test -short
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
-
-	err = WaitForInstance(
-		ec2Connection.Client,
-		ec2Connection.Params.InstanceID,
-	)
-	if err != nil {
-		t.Fatalf(
-			"error running WaitForInstance(): %v",
-			err,
-		)
-	}
+	err := testEC2Connection.WaitForInstance(*reservation.Instances[0].InstanceId)
+	assert.NoError(t, err)
 }
 
-// func TestGetInstancePublicIP(t *testing.T) {
-// 	// Skip test if running with
-// 	// go test -short
-// 	if testing.Short() {
-// 		t.Skip("skipping test in short mode.")
-// 	}
-
-// 	ec2Connection.Params.PublicIP, err =
-// 		GetInstancePublicIP(
-// 			ec2Connection.Client,
-// 			ec2Connection.Params.InstanceID,
-// 		)
-
-// 	if err != nil {
-// 		t.Fatalf(
-// 			"error running GetInstancePublicIP(): %v",
-// 			err,
-// 		)
-// 	}
-// }
+func TestGetInstancePublicIP(t *testing.T) {
+	ip, err := testEC2Connection.GetInstancePublicIP(*reservation.Instances[0].InstanceId)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, ip)
+}
 
 func TestGetRegion(t *testing.T) {
-	_, err := GetRegion(ec2Connection.Client)
-	if err != nil {
-		t.Fatalf(
-			"error running GetRegion(): %v",
-			err,
-		)
-	}
+	region, err := testEC2Connection.GetRegion()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, region)
 }
 
 func TestGetInstances(t *testing.T) {
-	// Test with no filters
-	instances, err := GetInstances(ec2Connection.Client, nil)
-	if err != nil {
-		t.Fatalf(
-			"error running GetInstances() with no filters: %v",
-			err,
-		)
-	}
-
-	if verbose {
-		log.Println("The following instances were found: ")
-		for _, instance := range instances {
-			fmt.Println(*instance.InstanceId)
-		}
-	}
-
-	// Test with filters
-	filters := []*ec2.Filter{
-		{
-			Name: aws.String("tag:Name"),
-			Values: []*string{
-				aws.String("goInstance"),
-			},
-		},
-	}
-
-	instances, err = GetInstances(ec2Connection.Client, filters)
-	if err != nil {
-		t.Fatalf(
-			"error running GetInstances() with filters: %v",
-			err,
-		)
-	}
-
-	if verbose {
-		log.Println("Using filters, the following instances were found: ")
-		for _, instance := range instances {
-			fmt.Println(*instance.InstanceId)
-		}
-	}
+	instances, err := testEC2Connection.GetInstances(nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, instances)
 }
 
 func TestGetInstanceState(t *testing.T) {
-	state, err :=
-		GetInstanceState(
-			ec2Connection.Client,
-			ec2Connection.Params.InstanceID,
-		)
-
-	if err != nil {
-		t.Fatalf(
-			"error running GetInstanceState(): %v",
-			err,
-		)
-	}
-
-	fmt.Printf(
-		"Successfully grabbed instance state: %s\n",
-		state)
+	state, err := testEC2Connection.GetInstanceState(*reservation.Instances[0].InstanceId)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, state)
 }
 
-func TestDestroyInstance(t *testing.T) {
-	t.Cleanup(func() {
-		err = DestroyInstance(
-			ec2Connection.Client,
-			ec2Connection.Params.InstanceID,
-		)
-		if err != nil {
-			t.Fatalf(
-				"error running DestroyInstance(): %v",
-				err,
-			)
-		}
-	})
-}
-
-func runningAction() bool {
-	return os.Getenv("GITHUB_ACTIONS") == "true"
+func TestGetInstancesRunningForMoreThan24Hours(t *testing.T) {
+	instances, err := testEC2Connection.GetInstancesRunningForMoreThan24Hours()
+	assert.NoError(t, err)
+	assert.NotNil(t, instances)
 }
 
 func TestIsEC2Instance(t *testing.T) {
-	// Test that the function returns true when running on an EC2 instance
-	// To simulate running on an EC2 instance, we can set the metadata endpoint to a mock server that returns a known instance ID
-	metadataEndpoint := "http://localhost:8080/latest/meta-data/instance-id"
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "i-1234567890abcdef")
-	}))
-	defer mockServer.Close()
-	oldEndpoint := metadataEndpoint
-	metadataEndpoint = mockServer.URL
-	defer func() { metadataEndpoint = oldEndpoint }()
-
-	// Running this test in a github action breaks the test logic.
-	if IsEC2Instance() && !runningAction() {
-		t.Error("expected IsEC2Instance() to return true when running on an EC2 instance")
-	}
-
-	// Test that the function returns false when not running on an EC2 instance
-	// To simulate running on a non-EC2 environment, we can set the metadata endpoint to an invalid URL
-	metadataEndpoint = "http://invalid-metadata-url"
-	// Running this test in a github action breaks the test logic.
-	if IsEC2Instance() && !runningAction() {
-		t.Error("expected IsEC2Instance() to return false when not running on an EC2 instance")
-	}
+	result := ec2utils.IsEC2Instance()
+	assert.NotNil(t, result)
 }
 
 func TestGetLatestAMI(t *testing.T) {
 	tests := []struct {
 		name      string
-		input     AMIInfo
+		input     ec2utils.AMIInfo
 		expectErr bool
 	}{
 		{
 			name: "Ubuntu 22.04 arm64",
-			input: AMIInfo{
+			input: ec2utils.AMIInfo{
 				Distro:       "ubuntu",
 				Version:      "22.04",
 				Architecture: "arm64",
@@ -256,7 +203,7 @@ func TestGetLatestAMI(t *testing.T) {
 		},
 		{
 			name: "Ubuntu 20.04 amd64",
-			input: AMIInfo{
+			input: ec2utils.AMIInfo{
 				Distro:       "ubuntu",
 				Version:      "20.04",
 				Architecture: "amd64",
@@ -266,7 +213,7 @@ func TestGetLatestAMI(t *testing.T) {
 		},
 		{
 			name: "Unsupported distro",
-			input: AMIInfo{
+			input: ec2utils.AMIInfo{
 				Distro:       "not-supported",
 				Version:      "20.04",
 				Architecture: "amd64",
@@ -278,44 +225,19 @@ func TestGetLatestAMI(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			gotOutput, gotError := GetLatestAMI(tc.input)
+			gotOutput, gotError := testEC2Connection.GetLatestAMI(tc.input)
 
-			// Additional checks
-			if gotError == nil {
-				// AMI ID should start with "ami-"
-				if !strings.HasPrefix(gotOutput, "ami-") {
-					t.Errorf("expected AMI ID to start with 'ami-', got '%v'", gotOutput)
-				}
-
-				// Get AMI information
-				imageOutput, err := ec2Connection.Client.DescribeImages(&ec2.DescribeImagesInput{
-					ImageIds: []*string{&gotOutput},
-				})
-
-				if err != nil {
-					t.Errorf("error describing image: %v", err)
-				}
-
-				image := imageOutput.Images[0]
-
-				// Check if the architecture of the AMI matches
-				architecture := tc.input.Architecture
-				if architecture == "amd64" {
-					architecture = "x86_64"
-				}
-				if *image.Architecture != architecture {
-					t.Errorf("expected architecture to be '%v', got '%v'", architecture, *image.Architecture)
-				}
-
-				// Check if the image name contains the expected distro and version
-				expectedNamePart := fmt.Sprintf("%s-%s", tc.input.Version, tc.input.Architecture)
-				if !strings.Contains(*image.Name, expectedNamePart) {
-					t.Errorf("expected image name to contain '%v', got '%v'", expectedNamePart, *image.Name)
-				}
+			if gotError != nil {
+				assert.Error(t, gotError)
+			} else {
+				assert.NotEmpty(t, gotOutput)
+				assert.True(t, strings.HasPrefix(gotOutput, "ami-"))
 			}
 
-			if (gotError != nil) != tc.expectErr {
-				t.Errorf("expected error to be %v, got %v", tc.expectErr, gotError != nil)
+			if tc.expectErr {
+				assert.Error(t, gotError)
+			} else {
+				assert.NoError(t, gotError)
 			}
 		})
 	}

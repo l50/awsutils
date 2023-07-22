@@ -12,39 +12,32 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
-// Connection contains all of the relevant
-// information to maintain
-// an EC2 connection.
+// Connection provides a connection
+// to AWS EC2.
 //
 // **Attributes:**
 //
-// Client: an EC2 session
-// Reservation: an EC2 reservation
-// Params: parameters for an EC2 instance
+// Client: the EC2 client
 type Connection struct {
-	Client      *ec2.EC2
-	Reservation *ec2.Reservation
-	Params      Params
+	Client *ec2.EC2
 }
 
-// Params provides parameter
-// options for an EC2 instance.
+// Params provides information
+// about an EC2 instance.
 //
 // **Attributes:**
 //
-// AssociatePublicIPAddress: whether or not to associate a public IP address
-// ImageID: the AMI ID to use
-// InstanceProfile: the IAM instance profile to use
-// InstanceType: the instance type to use
+// AssociatePublicIPAddress: whether to associate a public IP address
+// ImageID: the ID of the AMI to use
+// InstanceProfile: the name of the instance profile to use
+// InstanceType: the type of the instance to use
 // MinCount: the minimum number of instances to launch
 // MaxCount: the maximum number of instances to launch
-// SecurityGroupIDs: the security group IDs to use
-// KeyName: the key name to use
-// SubnetID: the subnet ID to use
-// VolumeSize: the volume size to use
-// InstanceID: the instance ID to use
-// InstanceName: the instance name to use
-// PublicIP: the public IP to use
+// SecurityGroupIDs: the IDs of the security groups to use
+// KeyName: the name of the key pair to use
+// SubnetID: the ID of the subnet to use
+// VolumeSize: the size of the volume to use
+// InstanceName: the name of the instance to use
 type Params struct {
 	AssociatePublicIPAddress bool
 	ImageID                  string
@@ -56,9 +49,7 @@ type Params struct {
 	KeyName                  string
 	SubnetID                 string
 	VolumeSize               int64
-	InstanceID               string
 	InstanceName             string
-	PublicIP                 string
 }
 
 // AMIInfo provides information
@@ -77,237 +68,21 @@ type AMIInfo struct {
 	Region       string
 }
 
-// createClient is a helper function that
-// returns a new ec2 session.
-func createClient() *ec2.EC2 {
+// NewConnection creates a new connection
+// to AWS EC2.
+//
+// **Returns:**
+//
+// *Connection: a new connection to AWS EC2
+func NewConnection() *Connection {
 	sess := session.Must(session.NewSessionWithOptions(
 		session.Options{
 			SharedConfigState: session.SharedConfigEnable,
 		}))
 
-	// Create EC2 service client
 	svc := ec2.New(sess)
 
-	return svc
-}
-
-// CreateConnection creates a connection
-// with EC2 and returns a Connection.
-func CreateConnection() Connection {
-	ec2Connection := Connection{}
-	ec2Connection.Client = createClient()
-
-	return ec2Connection
-}
-
-// CreateInstance returns an ec2 reservation for an instance
-// that is created with the input ec2Params.
-func CreateInstance(client *ec2.EC2, ec2Params Params) (*ec2.Reservation, error) {
-	result, err := client.RunInstances(&ec2.RunInstancesInput{
-		BlockDeviceMappings: []*ec2.BlockDeviceMapping{
-			{
-				DeviceName: aws.String("/dev/sdh"),
-				Ebs: &ec2.EbsBlockDevice{
-					VolumeSize: aws.Int64(ec2Params.VolumeSize),
-				},
-			},
-		},
-		IamInstanceProfile: &ec2.IamInstanceProfileSpecification{
-			Name: aws.String(ec2Params.InstanceProfile),
-		},
-		ImageId:      aws.String(ec2Params.ImageID),
-		InstanceType: aws.String(ec2Params.InstanceType),
-		MinCount:     aws.Int64(int64(ec2Params.MinCount)),
-		MaxCount:     aws.Int64(int64(ec2Params.MaxCount)),
-		// Omitted in favor of enforcing use of SSM.
-		// KeyName:    aws.String(ec2Params.KeyName),
-		NetworkInterfaces: []*ec2.InstanceNetworkInterfaceSpecification{
-			{
-				AssociatePublicIpAddress: aws.Bool(ec2Params.AssociatePublicIPAddress),
-				DeviceIndex:              aws.Int64(int64(0)),
-				SubnetId:                 aws.String(ec2Params.SubnetID),
-				Groups:                   aws.StringSlice(ec2Params.SecurityGroupIDs),
-			},
-		},
-		TagSpecifications: []*ec2.TagSpecification{
-			{
-				ResourceType: aws.String("instance"),
-				Tags: []*ec2.Tag{
-					{
-						Key:   aws.String("Name"),
-						Value: aws.String(ec2Params.InstanceName),
-					},
-				},
-			},
-		},
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-// CheckInstanceExists checks if an EC2 instance with the given instance ID exists.
-func CheckInstanceExists(client *ec2.EC2, instanceID string) error {
-	instances, err := GetInstances(client, nil)
-	if err != nil {
-		return err
-	}
-
-	for _, instance := range instances {
-		if *instance.InstanceId == instanceID {
-			return nil
-		}
-	}
-
-	return fmt.Errorf("instance %s does not exist", instanceID)
-}
-
-// TagInstance tags the instance tied to the input ID with the specified tag.
-func TagInstance(client *ec2.EC2, instanceID string, tagKey string, tagValue string) error {
-	_, err := client.CreateTags(&ec2.CreateTagsInput{
-		Resources: []*string{&instanceID},
-		Tags: []*ec2.Tag{
-			{
-				Key:   aws.String(tagKey),
-				Value: aws.String(tagValue),
-			},
-		},
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// DestroyInstance terminates the ec2 instance associated with
-// the input instanceID.
-func DestroyInstance(client *ec2.EC2, instanceID string) error {
-	_, err := client.TerminateInstances(&ec2.TerminateInstancesInput{
-		InstanceIds: []*string{&instanceID},
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// GetRunningInstances returns all ec2 instances with a state of running.
-func GetRunningInstances(client *ec2.EC2) (*ec2.DescribeInstancesOutput, error) {
-	result, err := client.DescribeInstances(&ec2.DescribeInstancesInput{
-		Filters: []*ec2.Filter{
-			{
-				Name:   aws.String("instance-state-name"),
-				Values: []*string{aws.String("running")},
-			},
-		},
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return result, err
-}
-
-// WaitForInstance waits for the input instanceID to get to
-// a running state.
-func WaitForInstance(client *ec2.EC2, instanceID string) error {
-	instanceStatus := &ec2.DescribeInstanceStatusInput{
-		InstanceIds: []*string{&instanceID},
-	}
-	err := client.WaitUntilInstanceStatusOk(instanceStatus)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// GetInstancePublicIP returns the public IP address
-// of the input instanceID.
-func GetInstancePublicIP(client *ec2.EC2, instanceID string) (string, error) {
-	result, err := client.DescribeInstances(&ec2.DescribeInstancesInput{
-		InstanceIds: []*string{aws.String(instanceID)},
-	})
-
-	if err != nil {
-		return "", err
-	}
-
-	return *result.Reservations[0].
-		Instances[0].
-		NetworkInterfaces[0].
-		Association.
-		PublicIp, nil
-}
-
-// GetRegion returns the region associated with the input
-// ec2 client.
-func GetRegion(client *ec2.EC2) (string, error) {
-	region := client.Config.Region
-
-	if region == nil {
-		return "", errors.New("failed to retrieve region")
-	}
-
-	return *region, nil
-}
-
-// GetInstanceID returns the instance ID
-// from an input instanceReservation.
-func GetInstanceID(instanceReservation *ec2.Instance) string {
-	return *instanceReservation.InstanceId
-}
-
-// GetInstances returns ec2 instances that the
-// input client has access to.
-// If no filters are provided, all ec2 instances will
-// be returned by default.
-func GetInstances(client *ec2.EC2, filters []*ec2.Filter) (
-	[]*ec2.Instance, error) {
-
-	instances := []*ec2.Instance{}
-
-	result, err := client.DescribeInstances(
-		&ec2.DescribeInstancesInput{
-			Filters: filters,
-		})
-
-	if err != nil {
-		return instances, err
-	}
-
-	// Get instances from reservations and add
-	// to the instances output.
-	for _, reservation := range result.Reservations {
-		instances = append(instances, reservation.Instances...)
-	}
-
-	return instances, nil
-}
-
-// GetInstanceState returns the state of the ec2
-// instance associated with the input instanceID.
-func GetInstanceState(client *ec2.EC2, instanceID string) (string, error) {
-	result, err := client.DescribeInstances(
-		&ec2.DescribeInstancesInput{
-			InstanceIds: []*string{aws.String(instanceID)},
-		})
-
-	if err != nil {
-		return "", err
-	}
-
-	return *result.Reservations[0].
-		Instances[0].
-		State.Name, nil
+	return &Connection{Client: svc}
 }
 
 // IsEC2Instance checks whether the code is running on an AWS
@@ -329,19 +104,279 @@ func IsEC2Instance() bool {
 	return false
 }
 
-// GetInstancesRunningForMoreThan24Hours returns a list of all EC2 instances running
-// for more than 24 hours.
-func GetInstancesRunningForMoreThan24Hours(client *ec2.EC2) ([]*ec2.Instance, error) {
-	// get all instances
-	instances, err := GetInstances(client, nil)
+// CreateInstance creates a new EC2 instance
+// with the provided parameters.
+//
+// **Parameters:**
+//
+// ec2Params: the parameters to use
+//
+// **Returns:**
+//
+// *ec2.Reservation: the reservation of the created instance
+//
+// error: an error if any issue occurs while trying to create the instance
+func (c *Connection) CreateInstance(ec2Params Params) (*ec2.Reservation, error) {
+	input := &ec2.RunInstancesInput{
+		BlockDeviceMappings: c.getBlockDeviceMappings(ec2Params),
+		IamInstanceProfile:  c.getIAMInstanceProfile(ec2Params),
+		ImageId:             aws.String(ec2Params.ImageID),
+		InstanceType:        aws.String(ec2Params.InstanceType),
+		MinCount:            aws.Int64(int64(ec2Params.MinCount)),
+		MaxCount:            aws.Int64(int64(ec2Params.MaxCount)),
+		NetworkInterfaces:   c.getNetworkInterfaces(ec2Params),
+		TagSpecifications:   c.getTagSpecifications(ec2Params),
+	}
+
+	result, err := c.Client.RunInstances(input)
 	if err != nil {
 		return nil, err
 	}
 
-	// filter out instances running for more than 24 hours
+	return result, nil
+}
+
+// CheckInstanceExists checks whether an instance
+// with the provided ID exists.
+//
+// **Parameters:**
+//
+// instanceID: the ID of the instance to check
+//
+// **Returns:**
+//
+// error: an error if any issue occurs while trying to check the instance
+func (c *Connection) CheckInstanceExists(instanceID string) error {
+	instances, err := c.GetInstances(nil)
+	if err != nil {
+		return err
+	}
+
+	for _, instance := range instances {
+		if *instance.InstanceId == instanceID {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("instance %s does not exist", instanceID)
+}
+
+// TagInstance tags an instance with the provided key and value.
+//
+// **Parameters:**
+//
+// instanceID: the ID of the instance to tag
+//
+// tagKey: the key of the tag to use
+//
+// tagValue: the value of the tag to use
+//
+// **Returns:**
+//
+// error: an error if any issue occurs while trying to tag the instance
+func (c *Connection) TagInstance(instanceID string, tagKey string, tagValue string) error {
+	input := &ec2.CreateTagsInput{
+		Resources: []*string{&instanceID},
+		Tags: []*ec2.Tag{
+			{
+				Key:   aws.String(tagKey),
+				Value: aws.String(tagValue),
+			},
+		},
+	}
+
+	_, err := c.Client.CreateTags(input)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DestroyInstance destroys the instance with the provided ID.
+//
+// **Parameters:**
+//
+// instanceID: the ID of the instance to destroy
+//
+// **Returns:**
+//
+// error: an error if any issue occurs while trying to destroy the instance
+func (c *Connection) DestroyInstance(instanceID string) error {
+	input := &ec2.TerminateInstancesInput{
+		InstanceIds: []*string{&instanceID},
+	}
+
+	_, err := c.Client.TerminateInstances(input)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetRunningInstances retrieves all running instances.
+//
+// **Returns:**
+//
+// *ec2.DescribeInstancesOutput: the output of the DescribeInstances operation
+//
+// error: an error if any issue occurs while trying to retrieve the running instances
+func (c *Connection) GetRunningInstances() (*ec2.DescribeInstancesOutput, error) {
+	input := &ec2.DescribeInstancesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("instance-state-name"),
+				Values: []*string{aws.String("running")},
+			},
+		},
+	}
+
+	result, err := c.Client.DescribeInstances(input)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+// WaitForInstance waits until the instance with the provided ID
+// is in the running state.
+//
+// **Parameters:**
+//
+// instanceID: the ID of the instance to wait for
+//
+// **Returns:**
+//
+// error: an error if any issue occurs while trying to wait for the instance
+func (c *Connection) WaitForInstance(instanceID string) error {
+	input := &ec2.DescribeInstanceStatusInput{
+		InstanceIds: []*string{&instanceID},
+	}
+
+	err := c.Client.WaitUntilInstanceStatusOk(input)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetInstancePublicIP retrieves the public IP address of the instance
+// with the provided ID.
+//
+// **Parameters:**
+//
+// instanceID: the ID of the instance to use
+//
+// **Returns:**
+//
+// string: the public IP address of the instance
+//
+// error: an error if any issue occurs while trying to retrieve the public IP address
+func (c *Connection) GetInstancePublicIP(instanceID string) (string, error) {
+	input := &ec2.DescribeInstancesInput{
+		InstanceIds: []*string{aws.String(instanceID)},
+	}
+
+	result, err := c.Client.DescribeInstances(input)
+	if err != nil {
+		return "", err
+	}
+
+	return *result.Reservations[0].
+		Instances[0].
+		NetworkInterfaces[0].
+		Association.
+		PublicIp, nil
+}
+
+// GetRegion retrieves the region of the connection.
+//
+// **Returns:**
+//
+// string: the region of the connection
+//
+// error: an error if any issue occurs while trying to retrieve the region
+func (c *Connection) GetRegion() (string, error) {
+	region := c.Client.Config.Region
+	if region == nil {
+		return "", errors.New("failed to retrieve region")
+	}
+
+	return *region, nil
+}
+
+// GetInstances retrieves all instances matching the provided filters.
+//
+// **Parameters:**
+//
+// filters: the filters to use
+//
+// **Returns:**
+//
+// []*ec2.Instance: the instances matching the provided filters
+//
+// error: an error if any issue occurs while trying to retrieve the instances
+func (c *Connection) GetInstances(filters []*ec2.Filter) ([]*ec2.Instance, error) {
+	input := &ec2.DescribeInstancesInput{
+		Filters: filters,
+	}
+
+	result, err := c.Client.DescribeInstances(input)
+	if err != nil {
+		return nil, err
+	}
+
+	var instances []*ec2.Instance
+	for _, reservation := range result.Reservations {
+		instances = append(instances, reservation.Instances...)
+	}
+
+	return instances, nil
+}
+
+// GetInstanceState retrieves the state of the instance with the provided ID.
+//
+// **Parameters:**
+//
+// instanceID: the ID of the instance to use
+//
+// **Returns:**
+//
+// string: the state of the instance
+//
+// error: an error if any issue occurs while trying to retrieve the state
+func (c *Connection) GetInstanceState(instanceID string) (string, error) {
+	input := &ec2.DescribeInstancesInput{
+		InstanceIds: []*string{aws.String(instanceID)},
+	}
+
+	result, err := c.Client.DescribeInstances(input)
+	if err != nil {
+		return "", err
+	}
+
+	return *result.Reservations[0].Instances[0].State.Name, nil
+}
+
+// GetInstancesRunningForMoreThan24Hours retrieves all instances
+// that have been running for more than 24 hours.
+//
+// **Returns:**
+//
+// []*ec2.Instance: the instances that have been running for more than 24 hours
+//
+// error: an error if any issue occurs while trying to retrieve the instances
+func (c *Connection) GetInstancesRunningForMoreThan24Hours() ([]*ec2.Instance, error) {
+	instances, err := c.GetInstances(nil)
+	if err != nil {
+		return nil, err
+	}
+
 	var instancesOver24Hours []*ec2.Instance
 	for _, instance := range instances {
-		// Check if instance's LaunchTime is more than 24 hours ago
 		if instance.LaunchTime.Before(time.Now().Add(-24 * time.Hour)) {
 			instancesOver24Hours = append(instancesOver24Hours, instance)
 		}
@@ -365,7 +400,7 @@ func GetInstancesRunningForMoreThan24Hours(client *ec2.EC2) ([]*ec2.Instance, er
 // string: The ID of the latest AMI found based on the provided information.
 //
 // error: An error if any issue occurs while trying to get the latest AMI.
-func GetLatestAMI(info AMIInfo) (string, error) {
+func (c *Connection) GetLatestAMI(info AMIInfo) (string, error) {
 	versionToAMIName := map[string]map[string]map[string]string{
 		"ubuntu": {
 			"22.04": {
@@ -465,4 +500,46 @@ func GetLatestAMI(info AMIInfo) (string, error) {
 	latestImage := result.Images[0]
 
 	return *latestImage.ImageId, nil
+}
+
+func (c *Connection) getBlockDeviceMappings(ec2Params Params) []*ec2.BlockDeviceMapping {
+	return []*ec2.BlockDeviceMapping{
+		{
+			DeviceName: aws.String("/dev/sdh"),
+			Ebs: &ec2.EbsBlockDevice{
+				VolumeSize: aws.Int64(ec2Params.VolumeSize),
+			},
+		},
+	}
+}
+
+func (c *Connection) getIAMInstanceProfile(ec2Params Params) *ec2.IamInstanceProfileSpecification {
+	return &ec2.IamInstanceProfileSpecification{
+		Name: aws.String(ec2Params.InstanceProfile),
+	}
+}
+
+func (c *Connection) getNetworkInterfaces(ec2Params Params) []*ec2.InstanceNetworkInterfaceSpecification {
+	return []*ec2.InstanceNetworkInterfaceSpecification{
+		{
+			AssociatePublicIpAddress: aws.Bool(ec2Params.AssociatePublicIPAddress),
+			DeviceIndex:              aws.Int64(int64(0)),
+			SubnetId:                 aws.String(ec2Params.SubnetID),
+			Groups:                   aws.StringSlice(ec2Params.SecurityGroupIDs),
+		},
+	}
+}
+
+func (c *Connection) getTagSpecifications(ec2Params Params) []*ec2.TagSpecification {
+	return []*ec2.TagSpecification{
+		{
+			ResourceType: aws.String("instance"),
+			Tags: []*ec2.Tag{
+				{
+					Key:   aws.String("Name"),
+					Value: aws.String(ec2Params.InstanceName),
+				},
+			},
+		},
+	}
 }

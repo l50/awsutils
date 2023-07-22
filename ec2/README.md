@@ -16,107 +16,143 @@ Table of contents:
 
 ## Functions
 
-### CheckInstanceExists(*ec2.EC2, string)
+### Connection.CheckInstanceExists(string)
 
 ```go
-CheckInstanceExists(*ec2.EC2, string) error
+CheckInstanceExists(string) error
 ```
 
-CheckInstanceExists checks if an EC2 instance with the given instance ID exists.
+CheckInstanceExists checks whether an instance
+with the provided ID exists.
+
+**Parameters:**
+
+instanceID: the ID of the instance to check
+
+**Returns:**
+
+error: an error if any issue occurs while trying to check the instance
 
 ---
 
-### CreateConnection()
+### Connection.CreateInstance(Params)
 
 ```go
-CreateConnection() Connection
+CreateInstance(Params) *ec2.Reservation, error
 ```
 
-CreateConnection creates a connection
-with EC2 and returns a Connection.
+CreateInstance creates a new EC2 instance
+with the provided parameters.
+
+**Parameters:**
+
+ec2Params: the parameters to use
+
+**Returns:**
+
+*ec2.Reservation: the reservation of the created instance
+
+error: an error if any issue occurs while trying to create the instance
 
 ---
 
-### CreateInstance(*ec2.EC2, Params)
+### Connection.DestroyInstance(string)
 
 ```go
-CreateInstance(*ec2.EC2, Params) *ec2.Reservation, error
+DestroyInstance(string) error
 ```
 
-CreateInstance returns an ec2 reservation for an instance
-that is created with the input ec2Params.
+DestroyInstance destroys the instance with the provided ID.
+
+**Parameters:**
+
+instanceID: the ID of the instance to destroy
+
+**Returns:**
+
+error: an error if any issue occurs while trying to destroy the instance
 
 ---
 
-### DestroyInstance(*ec2.EC2, string)
+### Connection.GetInstancePublicIP(string)
 
 ```go
-DestroyInstance(*ec2.EC2, string) error
+GetInstancePublicIP(string) string, error
 ```
 
-DestroyInstance terminates the ec2 instance associated with
-the input instanceID.
+GetInstancePublicIP retrieves the public IP address of the instance
+with the provided ID.
+
+**Parameters:**
+
+instanceID: the ID of the instance to use
+
+**Returns:**
+
+string: the public IP address of the instance
+
+error: an error if any issue occurs while trying to retrieve the public IP address
 
 ---
 
-### GetInstanceID(*ec2.Instance)
+### Connection.GetInstanceState(string)
 
 ```go
-GetInstanceID(*ec2.Instance) string
+GetInstanceState(string) string, error
 ```
 
-GetInstanceID returns the instance ID
-from an input instanceReservation.
+GetInstanceState retrieves the state of the instance with the provided ID.
+
+**Parameters:**
+
+instanceID: the ID of the instance to use
+
+**Returns:**
+
+string: the state of the instance
+
+error: an error if any issue occurs while trying to retrieve the state
 
 ---
 
-### GetInstancePublicIP(*ec2.EC2, string)
+### Connection.GetInstances([]*ec2.Filter)
 
 ```go
-GetInstancePublicIP(*ec2.EC2, string) string, error
+GetInstances([]*ec2.Filter) []*ec2.Instance, error
 ```
 
-GetInstancePublicIP returns the public IP address
-of the input instanceID.
+GetInstances retrieves all instances matching the provided filters.
+
+**Parameters:**
+
+filters: the filters to use
+
+**Returns:**
+
+[]*ec2.Instance: the instances matching the provided filters
+
+error: an error if any issue occurs while trying to retrieve the instances
 
 ---
 
-### GetInstanceState(*ec2.EC2, string)
+### Connection.GetInstancesRunningForMoreThan24Hours()
 
 ```go
-GetInstanceState(*ec2.EC2, string) string, error
+GetInstancesRunningForMoreThan24Hours() []*ec2.Instance, error
 ```
 
-GetInstanceState returns the state of the ec2
-instance associated with the input instanceID.
+GetInstancesRunningForMoreThan24Hours retrieves all instances
+that have been running for more than 24 hours.
+
+**Returns:**
+
+[]*ec2.Instance: the instances that have been running for more than 24 hours
+
+error: an error if any issue occurs while trying to retrieve the instances
 
 ---
 
-### GetInstances(*ec2.EC2, []*ec2.Filter)
-
-```go
-GetInstances(*ec2.EC2, []*ec2.Filter) []*ec2.Instance, error
-```
-
-GetInstances returns ec2 instances that the
-input client has access to.
-If no filters are provided, all ec2 instances will
-be returned by default.
-
----
-
-### GetInstancesRunningForMoreThan24Hours(*ec2.EC2)
-
-```go
-GetInstancesRunningForMoreThan24Hours(*ec2.EC2) []*ec2.Instance, error
-```
-
-GetInstancesRunningForMoreThan24Hours returns a list of all EC2 instances running
-for more than 24 hours.
-
----
-
-### GetLatestAMI(AMIInfo)
+### Connection.GetLatestAMI(AMIInfo)
 
 ```go
 GetLatestAMI(AMIInfo) string, error
@@ -140,24 +176,76 @@ error: An error if any issue occurs while trying to get the latest AMI.
 
 ---
 
-### GetRegion(*ec2.EC2)
+### Connection.GetRegion()
 
 ```go
-GetRegion(*ec2.EC2) string, error
+GetRegion() string, error
 ```
 
-GetRegion returns the region associated with the input
-ec2 client.
+GetRegion retrieves the region of the connection.
+
+**Returns:**
+
+string: the region of the connection
+
+error: an error if any issue occurs while trying to retrieve the region
 
 ---
 
-### GetRunningInstances(*ec2.EC2)
+### Connection.GetRunningInstances()
 
 ```go
-GetRunningInstances(*ec2.EC2) *ec2.DescribeInstancesOutput, error
+GetRunningInstances() *ec2.DescribeInstancesOutput, error
 ```
 
-GetRunningInstances returns all ec2 instances with a state of running.
+GetRunningInstances retrieves all running instances.
+
+**Returns:**
+
+*ec2.DescribeInstancesOutput: the output of the DescribeInstances operation
+
+error: an error if any issue occurs while trying to retrieve the running instances
+
+---
+
+### Connection.TagInstance(string, string, string)
+
+```go
+TagInstance(string, string, string) error
+```
+
+TagInstance tags an instance with the provided key and value.
+
+**Parameters:**
+
+instanceID: the ID of the instance to tag
+
+tagKey: the key of the tag to use
+
+tagValue: the value of the tag to use
+
+**Returns:**
+
+error: an error if any issue occurs while trying to tag the instance
+
+---
+
+### Connection.WaitForInstance(string)
+
+```go
+WaitForInstance(string) error
+```
+
+WaitForInstance waits until the instance with the provided ID
+is in the running state.
+
+**Parameters:**
+
+instanceID: the ID of the instance to wait for
+
+**Returns:**
+
+error: an error if any issue occurs while trying to wait for the instance
 
 ---
 
@@ -180,24 +268,18 @@ bool: A boolean value that indicates whether the code is running on an EC2 insta
 
 ---
 
-### TagInstance(*ec2.EC2, string, string, string)
+### NewConnection()
 
 ```go
-TagInstance(*ec2.EC2, string, string, string) error
+NewConnection() *Connection
 ```
 
-TagInstance tags the instance tied to the input ID with the specified tag.
+NewConnection creates a new connection
+to AWS EC2.
 
----
+**Returns:**
 
-### WaitForInstance(*ec2.EC2, string)
-
-```go
-WaitForInstance(*ec2.EC2, string) error
-```
-
-WaitForInstance waits for the input instanceID to get to
-a running state.
+*Connection: a new connection to AWS EC2
 
 ---
 
