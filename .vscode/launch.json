@@ -2,41 +2,17 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug magefile",
+      "name": "Debug awscli",
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "magefiles/mage_output_file.go",
+      "program": "${workspaceFolder}/magefiles/mage_output_file.go",
+      "args": ["generatePackageDocs"],
+      // Pass magefile as a separate argument,
+      // VSCode doesn't allow more than one file in "program".
       "buildFlags": "magefile.go",
-      "preLaunchTask": "source_test_env_go && create mage_output_file.go",
-      "postDebugTask": "delete mage_output_file.go",
-      "showLog": true
-    }
-  ],
-  "tasks": [
-    {
-      "label": "source_test_env_go",
-      "type": "shell",
-      "command": "source ./test_env.sensitive",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      }
-    },
-    {
-      "label": "create mage_output_file.go",
-      "type": "shell",
-      "command": "mage generate && go build -o .mage/mage_output_file.go magefile.go",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      }
-    },
-    {
-      "label": "delete mage_output_file.go",
-      "type": "shell",
-      "command": "rm .mage/mage_output_file.go",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      }
+      "preLaunchTask": "create mage_output_file.go and run code to debug",
+      "postDebugTask": "delete mage_output_file.go"
     }
   ]
 }
