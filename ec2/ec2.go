@@ -555,6 +555,182 @@ func (c *Connection) ListSecurityGroups() ([]*ec2.SecurityGroup, error) {
 	return result.SecurityGroups, nil
 }
 
+// ListSecurityGroupsForSubnet lists all security groups
+// for the provided subnet ID.
+//
+// **Parameters:**
+//
+// subnetID: the ID of the subnet to use
+//
+// **Returns:**
+//
+// []string: the IDs of the security groups for the provided subnet ID
+//
+// error: an error if any issue occurs while trying to list the security groups
+func (c *Connection) ListSecurityGroupsForSubnet(subnetID string) ([]string, error) {
+	input := &ec2.DescribeSecurityGroupsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name: aws.String("ip-permission.cidr"),
+				Values: []*string{
+					aws.String(subnetID),
+				},
+			},
+		},
+	}
+
+	result, err := c.Client.DescribeSecurityGroups(input)
+	if err != nil {
+		return nil, err
+	}
+
+	var groupIDs []string
+	for _, group := range result.SecurityGroups {
+		groupIDs = append(groupIDs, *group.GroupId)
+	}
+
+	return groupIDs, nil
+}
+
+// IsSubnetPubliclyRoutable checks whether the provided subnet ID
+// is publicly routable.
+//
+// **Parameters:**
+//
+// subnetID: the ID of the subnet to use
+//
+// **Returns:**
+//
+// bool: a boolean value indicating whether the provided subnet ID is publicly routable
+//
+// error: an error if any issue occurs while trying to check whether the provided subnet ID is publicly routable
+func (c *Connection) IsSubnetPubliclyRoutable(subnetID string) (bool, error) {
+	input := &ec2.DescribeRouteTablesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("association.subnet-id"),
+				Values: []*string{aws.String(subnetID)},
+			},
+		},
+	}
+	result, err := c.Client.DescribeRouteTables(input)
+	if err != nil {
+		return false, err
+	}
+	for _, routeTable := range result.RouteTables {
+		for _, route := range routeTable.Routes {
+			if route.GatewayId != nil && *route.GatewayId != "local" && *route.DestinationCidrBlock == "0.0.0.0/0" {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+// ListSecurityGroupsForVpc lists all security groups for the provided VPC ID.
+//
+// **Parameters:**
+//
+// vpcID: the ID of the VPC to use
+//
+// **Returns:**
+//
+// []string: the IDs of the security groups for the provided VPC ID
+//
+// error: an error if any issue occurs while trying to list the security groups
+func (c *Connection) ListSecurityGroupsForVpc(vpcID string) ([]string, error) {
+	input := &ec2.DescribeSecurityGroupsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("vpc-id"),
+				Values: []*string{aws.String(vpcID)},
+			},
+		},
+	}
+
+	result, err := c.Client.DescribeSecurityGroups(input)
+	if err != nil {
+		return nil, err
+	}
+
+	var groupIDs []string
+	for _, group := range result.SecurityGroups {
+		groupIDs = append(groupIDs, *group.GroupId)
+	}
+
+	return groupIDs, nil
+}
+
+// GetVPCID retrieves the ID of the VPC with the provided name.
+//
+// **Parameters:**
+//
+// vpcName: the name of the VPC to use
+//
+// **Returns:**
+//
+// string: the ID of the VPC with the provided name
+//
+// error: an error if any issue occurs while trying to retrieve the ID of the VPC with the provided name
+func (c *Connection) GetVPCID(vpcName string) (string, error) {
+	input := &ec2.DescribeVpcsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name: aws.String("tag:Name"),
+				Values: []*string{
+					aws.String(vpcName),
+				},
+			},
+		},
+	}
+
+	result, err := c.Client.DescribeVpcs(input)
+	if err != nil {
+		return "", err
+	}
+
+	if len(result.Vpcs) == 0 {
+		return "", errors.New("no VPC found with the provided name")
+	}
+
+	return *result.Vpcs[0].VpcId, nil
+}
+
+// GetSubnetID retrieves the ID of the subnet with the provided name.
+//
+// **Parameters:**
+//
+// subnetName: the name of the subnet to use
+//
+// **Returns:**
+//
+// string: the ID of the subnet with the provided name
+//
+// error: an error if any issue occurs while trying to retrieve the ID of the subnet with the provided name
+func (c *Connection) GetSubnetID(subnetName string) (string, error) {
+	input := &ec2.DescribeSubnetsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name: aws.String("tag:Name"),
+				Values: []*string{
+					aws.String(subnetName),
+				},
+			},
+		},
+	}
+
+	result, err := c.Client.DescribeSubnets(input)
+	if err != nil {
+		return "", err
+	}
+
+	if len(result.Subnets) == 0 {
+		return "", errors.New("no subnet found with the provided name")
+	}
+
+	return *result.Subnets[0].SubnetId, nil
+}
+
 func (c *Connection) getBlockDeviceMappings(ec2Params Params) []*ec2.BlockDeviceMapping {
 	return []*ec2.BlockDeviceMapping{
 		{
@@ -596,4 +772,3 @@ func (c *Connection) getTagSpecifications(ec2Params Params) []*ec2.TagSpecificat
 		},
 	}
 }
-
