@@ -502,6 +502,60 @@ func (c *Connection) GetLatestAMI(info AMIInfo) (string, error) {
 	return *latestImage.ImageId, nil
 }
 
+// FindOverlyPermissiveInboundRules checks if a specific security group permits all inbound traffic.
+// Specifically, it checks if the security group has an inbound rule with the IP protocol set to "-1",
+// which allows all IP traffic. This is useful for identifying security groups
+// that are configured with lenient security rules, especially in testing environments.
+// The function uses AWS SDK to describe security groups in AWS EC2 and checks their inbound rules.
+//
+// **Parameters:**
+//
+// secGrpID: A string containing the ID of the security group which needs to be checked for the all traffic inbound rule.
+//
+// **Returns:**
+//
+// bool: A boolean value indicating whether the security group permits all inbound traffic or not.
+//
+// error: An error if any issue occurs while trying to describe the security group or check its inbound rules.
+func (c *Connection) FindOverlyPermissiveInboundRules(secGrpID string) (bool, error) {
+	input := &ec2.DescribeSecurityGroupsInput{
+		GroupIds: []*string{aws.String(secGrpID)},
+	}
+
+	resp, err := c.Client.DescribeSecurityGroups(input)
+	if err != nil {
+		return false, err
+	}
+
+	for _, group := range resp.SecurityGroups {
+		for _, permission := range group.IpPermissions {
+			if *permission.IpProtocol == "-1" {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
+}
+
+// ListSecurityGroups lists all security groups.
+//
+// **Returns:**
+//
+// []*ec2.SecurityGroup: all security groups
+//
+// error: an error if any issue occurs while trying to list the security groups
+func (c *Connection) ListSecurityGroups() ([]*ec2.SecurityGroup, error) {
+	input := &ec2.DescribeSecurityGroupsInput{}
+
+	result, err := c.Client.DescribeSecurityGroups(input)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.SecurityGroups, nil
+}
+
 func (c *Connection) getBlockDeviceMappings(ec2Params Params) []*ec2.BlockDeviceMapping {
 	return []*ec2.BlockDeviceMapping{
 		{
@@ -544,20 +598,3 @@ func (c *Connection) getTagSpecifications(ec2Params Params) []*ec2.TagSpecificat
 	}
 }
 
-// ListSecurityGroups lists all security groups.
-//
-// **Returns:**
-//
-// []*ec2.SecurityGroup: all security groups
-//
-// error: an error if any issue occurs while trying to list the security groups
-func (c *Connection) ListSecurityGroups() ([]*ec2.SecurityGroup, error) {
-	input := &ec2.DescribeSecurityGroupsInput{}
-
-	result, err := c.Client.DescribeSecurityGroups(input)
-	if err != nil {
-		return nil, err
-	}
-
-	return result.SecurityGroups, nil
-}
