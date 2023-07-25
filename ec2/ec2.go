@@ -543,3 +543,21 @@ func (c *Connection) getTagSpecifications(ec2Params Params) []*ec2.TagSpecificat
 		},
 	}
 }
+
+// ListSecurityGroups lists all security groups.
+//
+// **Returns:**
+//
+// []*ec2.SecurityGroup: all security groups
+//
+// error: an error if any issue occurs while trying to list the security groups
+func (c *Connection) ListSecurityGroups() ([]*ec2.SecurityGroup, error) {
+	input := &ec2.DescribeSecurityGroupsInput{}
+
+	result, err := c.Client.DescribeSecurityGroups(input)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.SecurityGroups, nil
+}
