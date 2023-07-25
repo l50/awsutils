@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/service/iam"
-	"github.com/github.com/l50/aws/iam"
+	"github.com/l50/aws/iam"
 )
 
 func TestGetIamInstanceProfile(t *testing.T) {
