@@ -1,14 +1,8 @@
 package iam
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-	"time"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/iam"
 )
 
 // GetIamInstanceProfile retrieves the IAM instance profile by its name
@@ -30,4 +24,3 @@ func GetIamInstanceProfile(profileName string) (*iam.InstanceProfile, error) {
 
 	return result.InstanceProfile, nil
 }
-
