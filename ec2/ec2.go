@@ -458,7 +458,6 @@ func (c *Connection) GetLatestAMI(info AMIInfo) (string, error) {
 
 	amiNamePattern = fmt.Sprintf(amiNamePattern, info.Version)
 
-	fmt.Println(amiNamePattern)
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(info.Region),
 	})
