@@ -359,12 +359,12 @@ func TestGetSubnetID(t *testing.T) {
 	}{
 		{
 			name:       "Valid Subnet Name",
-			subnetName: "test-subnet-2", // This should match a 'Name' tag of one of your subnets
+			subnetName: "test-subnet-2",
 			expectErr:  false,
 		},
 		{
 			name:       "Invalid Subnet Name",
-			subnetName: "InvalidSubnet", // This should not match any 'Name' tag of your subnets
+			subnetName: "InvalidSubnet",
 			expectErr:  true,
 		},
 	}

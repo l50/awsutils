@@ -564,10 +564,10 @@ func (c *Connection) ListSecurityGroups() ([]*ec2.SecurityGroup, error) {
 //
 // **Returns:**
 //
-// []string: the IDs of the security groups for the provided subnet ID
+// []*ec2.SecurityGroup: all security groups for the provided subnet ID
 //
 // error: an error if any issue occurs while trying to list the security groups
-func (c *Connection) ListSecurityGroupsForSubnet(subnetID string) ([]string, error) {
+func (c *Connection) ListSecurityGroupsForSubnet(subnetID string) ([]*ec2.SecurityGroup, error) {
 	if err := c.checkResourceExistence("subnet", subnetID); err != nil {
 		return nil, err
 	}
@@ -587,12 +587,7 @@ func (c *Connection) ListSecurityGroupsForSubnet(subnetID string) ([]string, err
 		return nil, err
 	}
 
-	var groupIDs []string
-	for _, group := range result.SecurityGroups {
-		groupIDs = append(groupIDs, *group.GroupId)
-	}
-
-	return groupIDs, nil
+	return result.SecurityGroups, nil
 }
 
 // ListSecurityGroupsForVpc lists all security groups for the provided VPC ID.
@@ -603,10 +598,10 @@ func (c *Connection) ListSecurityGroupsForSubnet(subnetID string) ([]string, err
 //
 // **Returns:**
 //
-// []string: the IDs of the security groups for the provided VPC ID
+// []*ec2.SecurityGroup: all security groups for the provided VPC ID
 //
 // error: an error if any issue occurs while trying to list the security groups
-func (c *Connection) ListSecurityGroupsForVpc(vpcID string) ([]string, error) {
+func (c *Connection) ListSecurityGroupsForVpc(vpcID string) ([]*ec2.SecurityGroup, error) {
 	if err := c.checkResourceExistence("vpc", vpcID); err != nil {
 		return nil, err
 	}
@@ -624,12 +619,7 @@ func (c *Connection) ListSecurityGroupsForVpc(vpcID string) ([]string, error) {
 		return nil, err
 	}
 
-	var groupIDs []string
-	for _, group := range result.SecurityGroups {
-		groupIDs = append(groupIDs, *group.GroupId)
-	}
-
-	return groupIDs, nil
+	return result.SecurityGroups, nil
 }
 
 // IsSubnetPubliclyRoutable checks whether the provided subnet ID
