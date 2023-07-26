@@ -745,6 +745,30 @@ func (c *Connection) GetVPCID(vpcName string) (string, error) {
 	return *result.Vpcs[0].VpcId, nil
 }
 
+func (c *Connection) CreateSecurityGroup(groupName, description, vpcId string) (string, error) {
+	input := &ec2.CreateSecurityGroupInput{
+		GroupName:   aws.String(groupName),
+		Description: aws.String(description),
+		VpcId:       aws.String(vpcId),
+	}
+	result, err := c.Client.CreateSecurityGroup(input)
+	if err != nil {
+		return "", err
+	}
+	return *result.GroupId, nil
+}
+
+func (c *Connection) DestroySecurityGroup(groupId string) error {
+	input := &ec2.DeleteSecurityGroupInput{
+		GroupId: aws.String(groupId),
+	}
+	_, err := c.Client.DeleteSecurityGroup(input)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Helper function to check if a given resource exists
 func (c *Connection) checkResourceExistence(resourceName, resourceID string) error {
 	switch resourceName {
