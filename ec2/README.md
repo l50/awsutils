@@ -80,21 +80,27 @@ error: an error if any issue occurs while trying to destroy the instance
 FindOverlyPermissiveInboundRules(string) bool, error
 ```
 
-FindOverlyPermissiveInboundRules checks if a specific security group permits all inbound traffic.
-Specifically, it checks if the security group has an inbound rule with the IP protocol set to "-1",
-which allows all IP traffic. This is useful for identifying security groups
-that are configured with lenient security rules, especially in testing environments.
-The function uses AWS SDK to describe security groups in AWS EC2 and checks their inbound rules.
+FindOverlyPermissiveInboundRules checks if a specific security group permits
+all inbound traffic.
+
+Specifically, it checks if the security group has an inbound rule with the
+IP protocol set to "-1", which allows all IP traffic. This is useful for
+identifying security groups that are configured with lenient security rules,
+especially in testing environments. The function uses AWS SDK to describe
+security groups in AWS EC2 and checks their inbound rules.
 
 **Parameters:**
 
-secGrpID: A string containing the ID of the security group which needs to be checked for the all traffic inbound rule.
+secGrpID: A string containing the ID of the security group which needs to be
+checked for the all traffic inbound rule.
 
 **Returns:**
 
-bool: A boolean value indicating whether the security group permits all inbound traffic or not.
+bool: A boolean value indicating whether the security group permits all
+inbound traffic or not.
 
-error: An error if any issue occurs while trying to describe the security group or check its inbound rules.
+error: An error if any issue occurs while trying to describe the
+security group or check its inbound rules.
 
 ---
 
@@ -248,7 +254,8 @@ subnetName: the name of the subnet to use
 
 string: the ID of the subnet with the provided name
 
-error: an error if any issue occurs while trying to retrieve the ID of the subnet with the provided name
+error: an error if any issue occurs while trying to retrieve
+the ID of the subnet with the provided name
 
 ---
 
@@ -268,7 +275,8 @@ vpcName: the name of the VPC to use
 
 string: the ID of the VPC with the provided name
 
-error: an error if any issue occurs while trying to retrieve the ID of the VPC with the provided name
+error: an error if any issue occurs while trying to retrieve
+the ID of the VPC with the provided name
 
 ---
 
@@ -289,7 +297,8 @@ subnetID: the ID of the subnet to use
 
 bool: a boolean value indicating whether the provided subnet ID is publicly routable
 
-error: an error if any issue occurs while trying to check whether the provided subnet ID is publicly routable
+error: an error if any issue occurs while trying to check whether the
+provided subnet ID is publicly routable
 
 ---
 
@@ -312,7 +321,7 @@ error: an error if any issue occurs while trying to list the security groups
 ### Connection.ListSecurityGroupsForSubnet(string)
 
 ```go
-ListSecurityGroupsForSubnet(string) []string, error
+ListSecurityGroupsForSubnet(string) []*ec2.SecurityGroup, error
 ```
 
 ListSecurityGroupsForSubnet lists all security groups
@@ -324,7 +333,7 @@ subnetID: the ID of the subnet to use
 
 **Returns:**
 
-[]string: the IDs of the security groups for the provided subnet ID
+[]*ec2.SecurityGroup: all security groups for the provided subnet ID
 
 error: an error if any issue occurs while trying to list the security groups
 
@@ -333,7 +342,7 @@ error: an error if any issue occurs while trying to list the security groups
 ### Connection.ListSecurityGroupsForVpc(string)
 
 ```go
-ListSecurityGroupsForVpc(string) []string, error
+ListSecurityGroupsForVpc(string) []*ec2.SecurityGroup, error
 ```
 
 ListSecurityGroupsForVpc lists all security groups for the provided VPC ID.
@@ -344,7 +353,7 @@ vpcID: the ID of the VPC to use
 
 **Returns:**
 
-[]string: the IDs of the security groups for the provided VPC ID
+[]*ec2.SecurityGroup: all security groups for the provided VPC ID
 
 error: an error if any issue occurs while trying to list the security groups
 
