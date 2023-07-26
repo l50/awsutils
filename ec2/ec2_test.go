@@ -412,3 +412,74 @@ func TestGetVPCID(t *testing.T) {
 		})
 	}
 }
+
+func TestCreateSecurityGroup(t *testing.T) {
+	tests := []struct {
+		name            string
+		groupName       string
+		description     string
+		vpcId           string
+		expectedGroupID string
+		expectErr       bool
+	}{
+		{
+			name:            "Valid Inputs",
+			groupName:       "test-group",
+			description:     "test description",
+			vpcId:           "test-vpc-id",
+			expectedGroupID: "test-group-id",
+			expectErr:       false,
+		},
+		{
+			name:            "Invalid Inputs",
+			groupName:       "",
+			description:     "",
+			vpcId:           "",
+			expectedGroupID: "",
+			expectErr:       true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			groupID, err := testEC2Connection.CreateSecurityGroup(tc.groupName, tc.description, tc.vpcId)
+			if tc.expectErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectedGroupID, groupID)
+			}
+		})
+	}
+}
+
+func TestDestroySecurityGroup(t *testing.T) {
+	tests := []struct {
+		name      string
+		groupId   string
+		expectErr bool
+	}{
+		{
+			name:      "Valid Group ID",
+			groupId:   "test-group-id",
+			expectErr: false,
+		},
+		{
+			name:      "Invalid Group ID",
+			groupId:   "",
+			expectErr: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+
+			err := testEC2Connection.DestroySecurityGroup(tc.groupId)
+			if tc.expectErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}

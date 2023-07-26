@@ -713,7 +713,8 @@ func (c *Connection) GetSubnetID(subnetName string) (string, error) {
 //
 // **Parameters:**
 //
-// vpcName: the name of the VPC to use
+// vpcName: the name of the VPC to use. If "default" is provided, the function
+// will return the ID of the default VPC.
 //
 // **Returns:**
 //
@@ -722,15 +723,27 @@ func (c *Connection) GetSubnetID(subnetName string) (string, error) {
 // error: an error if any issue occurs while trying to retrieve
 // the ID of the VPC with the provided name
 func (c *Connection) GetVPCID(vpcName string) (string, error) {
-	input := &ec2.DescribeVpcsInput{
-		Filters: []*ec2.Filter{
-			{
-				Name: aws.String("tag:Name"),
-				Values: []*string{
-					aws.String(vpcName),
+	var input *ec2.DescribeVpcsInput
+
+	// Check if we're looking for the default VPC
+	if vpcName == "default" {
+		input = &ec2.DescribeVpcsInput{
+			Filters: []*ec2.Filter{
+				{
+					Name:   aws.String("isDefault"),
+					Values: []*string{aws.String("true")},
 				},
 			},
-		},
+		}
+	} else {
+		input = &ec2.DescribeVpcsInput{
+			Filters: []*ec2.Filter{
+				{
+					Name:   aws.String("tag:Name"),
+					Values: []*string{aws.String(vpcName)},
+				},
+			},
+		}
 	}
 
 	result, err := c.Client.DescribeVpcs(input)
@@ -739,12 +752,32 @@ func (c *Connection) GetVPCID(vpcName string) (string, error) {
 	}
 
 	if len(result.Vpcs) == 0 {
-		return "", errors.New("no VPC found with the provided name")
+		if vpcName == "default" {
+			return "", errors.New("no default VPC found")
+		} else {
+			return "", errors.New("no VPC found with the provided name")
+		}
 	}
 
 	return *result.Vpcs[0].VpcId, nil
 }
 
+// CreateSecurityGroup creates a new security group with the provided name,
+// description and VPC ID.
+//
+// **Parameters:**
+//
+// groupName: the name of the security group to use
+//
+// description: the description of the security group to use
+//
+// vpcId: the ID of the VPC to use
+//
+// **Returns:**
+//
+// string: the ID of the created security group
+//
+// error: an error if any issue occurs while trying to create the security group
 func (c *Connection) CreateSecurityGroup(groupName, description, vpcId string) (string, error) {
 	input := &ec2.CreateSecurityGroupInput{
 		GroupName:   aws.String(groupName),
@@ -758,6 +791,15 @@ func (c *Connection) CreateSecurityGroup(groupName, description, vpcId string) (
 	return *result.GroupId, nil
 }
 
+// DestroySecurityGroup destroys the security group with the provided ID.
+//
+// **Parameters:**
+//
+// groupId: the ID of the security group to destroy
+//
+// **Returns:**
+//
+// error: an error if any issue occurs while trying to destroy the security group
 func (c *Connection) DestroySecurityGroup(groupId string) error {
 	input := &ec2.DeleteSecurityGroupInput{
 		GroupId: aws.String(groupId),
