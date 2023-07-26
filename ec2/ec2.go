@@ -595,6 +595,43 @@ func (c *Connection) ListSecurityGroupsForSubnet(subnetID string) ([]string, err
 	return groupIDs, nil
 }
 
+// ListSecurityGroupsForVpc lists all security groups for the provided VPC ID.
+//
+// **Parameters:**
+//
+// vpcID: the ID of the VPC to use
+//
+// **Returns:**
+//
+// []string: the IDs of the security groups for the provided VPC ID
+//
+// error: an error if any issue occurs while trying to list the security groups
+func (c *Connection) ListSecurityGroupsForVpc(vpcID string) ([]string, error) {
+	if err := c.checkResourceExistence("vpc", vpcID); err != nil {
+		return nil, err
+	}
+	input := &ec2.DescribeSecurityGroupsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("vpc-id"),
+				Values: []*string{aws.String(vpcID)},
+			},
+		},
+	}
+
+	result, err := c.Client.DescribeSecurityGroups(input)
+	if err != nil {
+		return nil, err
+	}
+
+	var groupIDs []string
+	for _, group := range result.SecurityGroups {
+		groupIDs = append(groupIDs, *group.GroupId)
+	}
+
+	return groupIDs, nil
+}
+
 // IsSubnetPubliclyRoutable checks whether the provided subnet ID
 // is publicly routable.
 //
@@ -632,43 +669,6 @@ func (c *Connection) IsSubnetPubliclyRoutable(subnetID string) (bool, error) {
 		}
 	}
 	return false, nil
-}
-
-// ListSecurityGroupsForVpc lists all security groups for the provided VPC ID.
-//
-// **Parameters:**
-//
-// vpcID: the ID of the VPC to use
-//
-// **Returns:**
-//
-// []string: the IDs of the security groups for the provided VPC ID
-//
-// error: an error if any issue occurs while trying to list the security groups
-func (c *Connection) ListSecurityGroupsForVpc(vpcID string) ([]string, error) {
-	if err := c.checkResourceExistence("vpc", vpcID); err != nil {
-		return nil, err
-	}
-	input := &ec2.DescribeSecurityGroupsInput{
-		Filters: []*ec2.Filter{
-			{
-				Name:   aws.String("vpc-id"),
-				Values: []*string{aws.String(vpcID)},
-			},
-		},
-	}
-
-	result, err := c.Client.DescribeSecurityGroups(input)
-	if err != nil {
-		return nil, err
-	}
-
-	var groupIDs []string
-	for _, group := range result.SecurityGroups {
-		groupIDs = append(groupIDs, *group.GroupId)
-	}
-
-	return groupIDs, nil
 }
 
 // GetSubnetID retrieves the ID of the subnet with the provided name.
