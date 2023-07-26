@@ -89,7 +89,7 @@ To use the awsutils/dynamo package, you first need to install it.
 Follow the steps below to install via go get.
 
 ```bash
-go get github.com/awsutils/l50/dynamo
+go get github.com/l50/awsutils/dynamo
 ```
 
 ---
@@ -100,7 +100,7 @@ After installation, you can import the package in your Go project
 using the following import statement:
 
 ```go
-import "github.com/awsutils/l50/dynamo"
+import "github.com/l50/awsutils/dynamo"
 ```
 
 ---

@@ -178,7 +178,7 @@ To use the awsutils/ssm package, you first need to install it.
 Follow the steps below to install via go get.
 
 ```bash
-go get github.com/awsutils/l50/ssm
+go get github.com/l50/awsutils/ssm
 ```
 
 ---
@@ -189,7 +189,7 @@ After installation, you can import the package in your Go project
 using the following import statement:
 
 ```go
-import "github.com/awsutils/l50/ssm"
+import "github.com/l50/awsutils/ssm"
 ```
 
 ---

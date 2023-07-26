@@ -74,6 +74,30 @@ error: an error if any issue occurs while trying to destroy the instance
 
 ---
 
+### Connection.FindOverlyPermissiveInboundRules(string)
+
+```go
+FindOverlyPermissiveInboundRules(string) bool, error
+```
+
+FindOverlyPermissiveInboundRules checks if a specific security group permits all inbound traffic.
+Specifically, it checks if the security group has an inbound rule with the IP protocol set to "-1",
+which allows all IP traffic. This is useful for identifying security groups
+that are configured with lenient security rules, especially in testing environments.
+The function uses AWS SDK to describe security groups in AWS EC2 and checks their inbound rules.
+
+**Parameters:**
+
+secGrpID: A string containing the ID of the security group which needs to be checked for the all traffic inbound rule.
+
+**Returns:**
+
+bool: A boolean value indicating whether the security group permits all inbound traffic or not.
+
+error: An error if any issue occurs while trying to describe the security group or check its inbound rules.
+
+---
+
 ### Connection.GetInstancePublicIP(string)
 
 ```go
@@ -208,6 +232,124 @@ error: an error if any issue occurs while trying to retrieve the running instanc
 
 ---
 
+### Connection.GetSubnetID(string)
+
+```go
+GetSubnetID(string) string, error
+```
+
+GetSubnetID retrieves the ID of the subnet with the provided name.
+
+**Parameters:**
+
+subnetName: the name of the subnet to use
+
+**Returns:**
+
+string: the ID of the subnet with the provided name
+
+error: an error if any issue occurs while trying to retrieve the ID of the subnet with the provided name
+
+---
+
+### Connection.GetVPCID(string)
+
+```go
+GetVPCID(string) string, error
+```
+
+GetVPCID retrieves the ID of the VPC with the provided name.
+
+**Parameters:**
+
+vpcName: the name of the VPC to use
+
+**Returns:**
+
+string: the ID of the VPC with the provided name
+
+error: an error if any issue occurs while trying to retrieve the ID of the VPC with the provided name
+
+---
+
+### Connection.IsSubnetPubliclyRoutable(string)
+
+```go
+IsSubnetPubliclyRoutable(string) bool, error
+```
+
+IsSubnetPubliclyRoutable checks whether the provided subnet ID
+is publicly routable.
+
+**Parameters:**
+
+subnetID: the ID of the subnet to use
+
+**Returns:**
+
+bool: a boolean value indicating whether the provided subnet ID is publicly routable
+
+error: an error if any issue occurs while trying to check whether the provided subnet ID is publicly routable
+
+---
+
+### Connection.ListSecurityGroups()
+
+```go
+ListSecurityGroups() []*ec2.SecurityGroup, error
+```
+
+ListSecurityGroups lists all security groups.
+
+**Returns:**
+
+[]*ec2.SecurityGroup: all security groups
+
+error: an error if any issue occurs while trying to list the security groups
+
+---
+
+### Connection.ListSecurityGroupsForSubnet(string)
+
+```go
+ListSecurityGroupsForSubnet(string) []string, error
+```
+
+ListSecurityGroupsForSubnet lists all security groups
+for the provided subnet ID.
+
+**Parameters:**
+
+subnetID: the ID of the subnet to use
+
+**Returns:**
+
+[]string: the IDs of the security groups for the provided subnet ID
+
+error: an error if any issue occurs while trying to list the security groups
+
+---
+
+### Connection.ListSecurityGroupsForVpc(string)
+
+```go
+ListSecurityGroupsForVpc(string) []string, error
+```
+
+ListSecurityGroupsForVpc lists all security groups for the provided VPC ID.
+
+**Parameters:**
+
+vpcID: the ID of the VPC to use
+
+**Returns:**
+
+[]string: the IDs of the security groups for the provided VPC ID
+
+error: an error if any issue occurs while trying to list the security groups
+
+---
+
 ### Connection.TagInstance(string, string, string)
 
 ```go
@@ -289,7 +431,7 @@ To use the awsutils/ec2 package, you first need to install it.
 Follow the steps below to install via go get.
 
 ```bash
-go get github.com/awsutils/l50/ec2
+go get github.com/l50/awsutils/ec2
 ```
 
 ---
@@ -300,7 +442,7 @@ After installation, you can import the package in your Go project
 using the following import statement:
 
 ```go
-import "github.com/awsutils/l50/ec2"
+import "github.com/l50/awsutils/ec2"
 ```
 
 ---
