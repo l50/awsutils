@@ -351,6 +351,37 @@ func TestListSecurityGroupsForVpc(t *testing.T) {
 	}
 }
 
+func TestGetSubnetID(t *testing.T) {
+	tests := []struct {
+		name       string
+		subnetName string
+		expectErr  bool
+	}{
+		{
+			name:       "Valid Subnet Name",
+			subnetName: "test-subnet-2", // This should match a 'Name' tag of one of your subnets
+			expectErr:  false,
+		},
+		{
+			name:       "Invalid Subnet Name",
+			subnetName: "InvalidSubnet", // This should not match any 'Name' tag of your subnets
+			expectErr:  true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, gotError := testEC2Connection.GetSubnetID(tc.subnetName)
+
+			if tc.expectErr {
+				assert.Error(t, gotError)
+			} else {
+				assert.NoError(t, gotError)
+			}
+		})
+	}
+}
+
 func TestGetVPCID(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -372,37 +403,6 @@ func TestGetVPCID(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			_, gotError := testEC2Connection.GetVPCID(tc.vpcName)
-
-			if tc.expectErr {
-				assert.Error(t, gotError)
-			} else {
-				assert.NoError(t, gotError)
-			}
-		})
-	}
-}
-
-func TestGetSubnetID(t *testing.T) {
-	tests := []struct {
-		name       string
-		subnetName string
-		expectErr  bool
-	}{
-		{
-			name:       "test-subnet-2",
-			subnetName: "ValidSubnet",
-			expectErr:  false,
-		},
-		{
-			name:       "Invalid Subnet Name",
-			subnetName: "InvalidSubnet",
-			expectErr:  true,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			_, gotError := testEC2Connection.GetSubnetID(tc.subnetName)
 
 			if tc.expectErr {
 				assert.Error(t, gotError)

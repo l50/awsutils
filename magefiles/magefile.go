@@ -3,10 +3,15 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/l50/goutils/v2/dev/lint"
 	mageutils "github.com/l50/goutils/v2/dev/mage"
@@ -14,6 +19,7 @@ import (
 	fileutils "github.com/l50/goutils/v2/file/fileutils"
 	"github.com/l50/goutils/v2/git"
 	"github.com/l50/goutils/v2/sys"
+	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 	"github.com/spf13/afero"
 )
@@ -187,5 +193,126 @@ func UseFixCodeBlocks(filepath string, language string) error {
 		return fmt.Errorf("failed to fix code blocks: %v", err)
 	}
 
+	return nil
+}
+
+// Run runs the unit tests and extracts failing functions and their tests.
+func Run() error {
+	reader := bufio.NewReader(os.Stdin)
+
+	// Select package
+	fmt.Println("Please select a package to test:")
+	packages, _ := listPackages()
+	// Append option for running all tests
+	packages = append(packages, "Run all tests")
+
+	for i, pkg := range packages {
+		fmt.Printf("[%d] %s\n", i, pkg)
+	}
+	fmt.Print("Enter the number of the package: ")
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)     // remove trailing newline
+	inputNum, err := strconv.Atoi(input) // convert string to integer
+	if err != nil {
+		fmt.Println("Invalid input, please enter a number.")
+		return err
+	}
+
+	if inputNum == len(packages)-1 { // Check if user selected last option (run all tests)
+		// Select test type
+		fmt.Println("Please select a test type:")
+		testTypes := []string{"all", "coverage", "short"}
+		for i, testType := range testTypes {
+			fmt.Printf("[%d] %s\n", i, testType)
+		}
+		fmt.Print("Enter the number of the test type: ")
+		input, _ = reader.ReadString('\n')
+		input = strings.TrimSpace(input)
+		inputNum, err = strconv.Atoi(input)
+		if err != nil {
+			fmt.Println("Invalid input, please enter a number.")
+			return err
+		}
+		selectedTestType := testTypes[inputNum]
+
+		mg.SerialDeps(RunTests(selectedTestType))
+	} else {
+		selectedPackage := packages[inputNum]
+		mg.SerialDeps(runTests(selectedPackage), extractFailedFunctions(selectedPackage))
+	}
+	return nil
+}
+
+// extractFunctionName extracts the function name from a test output line.
+func extractFunctionName(line string) string {
+	// Assuming line is of the format: `=== RUN   TestFunctionName`
+	parts := strings.Split(line, " ")
+	if len(parts) >= 4 {
+		return parts[3]
+	}
+	return ""
+}
+
+// findTestFunction finds the test function for a given function name.
+func findTestFunction(functionName string) string {
+	// Assuming each function `Foo` has a corresponding test function `TestFoo`
+	return "Test" + functionName
+}
+
+// runTests executes go test.
+func runTests(pkg string) error {
+	fmt.Printf("Running tests for package %s...\n", pkg)
+	if err := sh.Run("go", "test", "-v", pkg); err != nil {
+		return fmt.Errorf("tests failed: %w", err)
+	}
+	return nil
+}
+
+// listPackages returns a slice of all package paths.
+func listPackages() ([]string, error) {
+	cmd := exec.Command("go", "list", "./...")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("unable to list packages: %w", err)
+	}
+	packages := strings.Split(string(output), "\n")
+
+	// Filter out empty strings or strings containing only white spaces
+	var validPackages []string
+	for _, pkg := range packages {
+		if strings.TrimSpace(pkg) != "" {
+			validPackages = append(validPackages, pkg)
+		}
+	}
+	return validPackages, nil
+}
+
+// TestEvent represents a test event.
+type TestEvent struct {
+	Action  string
+	Package string
+	Test    string
+	Output  string
+}
+
+// extractFailedFunctions parses the test output and extracts failing functions and their tests.
+func extractFailedFunctions(pkg string) error {
+	fmt.Println("Extracting failed functions...")
+
+	// Run the test with -json flag to parse the output easily.
+	cmd := exec.Command("go", "test", "-json", pkg)
+	output, _ := cmd.CombinedOutput()
+
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		var event TestEvent
+		if err := json.Unmarshal([]byte(line), &event); err != nil {
+			return fmt.Errorf("unable to unmarshal test event: %w", err)
+		}
+
+		if event.Action == "fail" {
+			fmt.Println("Failed function: ", event.Test)
+		}
+	}
 	return nil
 }

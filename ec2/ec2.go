@@ -568,6 +568,9 @@ func (c *Connection) ListSecurityGroups() ([]*ec2.SecurityGroup, error) {
 //
 // error: an error if any issue occurs while trying to list the security groups
 func (c *Connection) ListSecurityGroupsForSubnet(subnetID string) ([]string, error) {
+	if err := c.checkResourceExistence("subnet", subnetID); err != nil {
+		return nil, err
+	}
 	input := &ec2.DescribeSecurityGroupsInput{
 		Filters: []*ec2.Filter{
 			{
@@ -605,6 +608,10 @@ func (c *Connection) ListSecurityGroupsForSubnet(subnetID string) ([]string, err
 //
 // error: an error if any issue occurs while trying to check whether the provided subnet ID is publicly routable
 func (c *Connection) IsSubnetPubliclyRoutable(subnetID string) (bool, error) {
+	if err := c.checkResourceExistence("subnet", subnetID); err != nil {
+		return false, err
+	}
+
 	input := &ec2.DescribeRouteTablesInput{
 		Filters: []*ec2.Filter{
 			{
@@ -639,6 +646,9 @@ func (c *Connection) IsSubnetPubliclyRoutable(subnetID string) (bool, error) {
 //
 // error: an error if any issue occurs while trying to list the security groups
 func (c *Connection) ListSecurityGroupsForVpc(vpcID string) ([]string, error) {
+	if err := c.checkResourceExistence("vpc", vpcID); err != nil {
+		return nil, err
+	}
 	input := &ec2.DescribeSecurityGroupsInput{
 		Filters: []*ec2.Filter{
 			{
@@ -659,6 +669,46 @@ func (c *Connection) ListSecurityGroupsForVpc(vpcID string) ([]string, error) {
 	}
 
 	return groupIDs, nil
+}
+
+// GetSubnetID retrieves the ID of the subnet with the provided name.
+//
+// **Parameters:**
+//
+// subnetName: the name of the subnet to use
+//
+// **Returns:**
+//
+// string: the ID of the subnet with the provided name
+//
+// error: an error if any issue occurs while trying to retrieve the ID of the subnet with the provided name
+func (c *Connection) GetSubnetID(subnetName string) (string, error) {
+	input := &ec2.DescribeSubnetsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name: aws.String("tag:Name"),
+				Values: []*string{
+					aws.String(subnetName),
+				},
+			},
+		},
+	}
+
+	result, err := c.Client.DescribeSubnets(input)
+	if err != nil {
+		return "", err
+	}
+
+	if len(result.Subnets) == 0 {
+		return "", errors.New("no subnet found with the provided name")
+	}
+
+	subnetID := *result.Subnets[0].SubnetId
+	if err := c.checkResourceExistence("subnet", subnetID); err != nil {
+		return "", err
+	}
+
+	return subnetID, nil
 }
 
 // GetVPCID retrieves the ID of the VPC with the provided name.
@@ -696,39 +746,24 @@ func (c *Connection) GetVPCID(vpcName string) (string, error) {
 	return *result.Vpcs[0].VpcId, nil
 }
 
-// GetSubnetID retrieves the ID of the subnet with the provided name.
-//
-// **Parameters:**
-//
-// subnetName: the name of the subnet to use
-//
-// **Returns:**
-//
-// string: the ID of the subnet with the provided name
-//
-// error: an error if any issue occurs while trying to retrieve the ID of the subnet with the provided name
-func (c *Connection) GetSubnetID(subnetName string) (string, error) {
-	input := &ec2.DescribeSubnetsInput{
-		Filters: []*ec2.Filter{
-			{
-				Name: aws.String("tag:Name"),
-				Values: []*string{
-					aws.String(subnetName),
-				},
-			},
-		},
+// Helper function to check if a given resource exists
+func (c *Connection) checkResourceExistence(resourceName, resourceID string) error {
+	switch resourceName {
+	case "subnet":
+		input := &ec2.DescribeSubnetsInput{
+			SubnetIds: []*string{aws.String(resourceID)},
+		}
+		_, err := c.Client.DescribeSubnets(input)
+		return err
+	case "vpc":
+		input := &ec2.DescribeVpcsInput{
+			VpcIds: []*string{aws.String(resourceID)},
+		}
+		_, err := c.Client.DescribeVpcs(input)
+		return err
+	default:
+		return errors.New("unsupported resource type")
 	}
-
-	result, err := c.Client.DescribeSubnets(input)
-	if err != nil {
-		return "", err
-	}
-
-	if len(result.Subnets) == 0 {
-		return "", errors.New("no subnet found with the provided name")
-	}
-
-	return *result.Subnets[0].SubnetId, nil
 }
 
 func (c *Connection) getBlockDeviceMappings(ec2Params Params) []*ec2.BlockDeviceMapping {
