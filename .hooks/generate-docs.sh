@@ -38,7 +38,7 @@ fi
 repo_root
 
 # Run the mage generatepackagedocs command
-$(which mage) generatepackagedocs
+$(command -v mage) generatepackagedocs
 
 # Catch the exit code of the last command
 exit_status=$?
