@@ -754,9 +754,8 @@ func (c *Connection) GetVPCID(vpcName string) (string, error) {
 	if len(result.Vpcs) == 0 {
 		if vpcName == "default" {
 			return "", errors.New("no default VPC found")
-		} else {
-			return "", errors.New("no VPC found with the provided name")
 		}
+		return "", errors.New("no VPC found with the provided name")
 	}
 
 	return *result.Vpcs[0].VpcId, nil
@@ -771,18 +770,18 @@ func (c *Connection) GetVPCID(vpcName string) (string, error) {
 //
 // description: the description of the security group to use
 //
-// vpcId: the ID of the VPC to use
+// vpcID: the ID of the VPC to use
 //
 // **Returns:**
 //
 // string: the ID of the created security group
 //
 // error: an error if any issue occurs while trying to create the security group
-func (c *Connection) CreateSecurityGroup(groupName, description, vpcId string) (string, error) {
+func (c *Connection) CreateSecurityGroup(groupName, description, vpcID string) (string, error) {
 	input := &ec2.CreateSecurityGroupInput{
 		GroupName:   aws.String(groupName),
 		Description: aws.String(description),
-		VpcId:       aws.String(vpcId),
+		VpcId:       aws.String(vpcID),
 	}
 	result, err := c.Client.CreateSecurityGroup(input)
 	if err != nil {
@@ -800,9 +799,9 @@ func (c *Connection) CreateSecurityGroup(groupName, description, vpcId string) (
 // **Returns:**
 //
 // error: an error if any issue occurs while trying to destroy the security group
-func (c *Connection) DestroySecurityGroup(groupId string) error {
+func (c *Connection) DestroySecurityGroup(groupID string) error {
 	input := &ec2.DeleteSecurityGroupInput{
-		GroupId: aws.String(groupId),
+		GroupId: aws.String(groupID),
 	}
 	_, err := c.Client.DeleteSecurityGroup(input)
 	if err != nil {

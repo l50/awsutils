@@ -1,65 +1,18 @@
 package ec2_test
 
 import (
-	"fmt"
 	"os"
 	"strings"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	ec2utils "github.com/l50/awsutils/ec2"
 	"github.com/stretchr/testify/assert"
 )
 
-var testEC2Connection *ec2utils.Connection
-var testInstanceID string
-var reservation *ec2.Reservation
-var testParams ec2utils.Params
-
-func init() {
-	testParams = ec2utils.Params{
-		AssociatePublicIPAddress: true,
-		ImageID:                  os.Getenv("AMI"),
-		InstanceName:             os.Getenv("INST_NAME"),
-		InstanceType:             os.Getenv("INST_TYPE"),
-		InstanceProfile:          os.Getenv("IAM_INSTANCE_PROFILE"),
-		MinCount:                 1,
-		MaxCount:                 1,
-		SecurityGroupIDs:         []string{os.Getenv("SEC_GRP_ID")},
-		SubnetID:                 os.Getenv("SUBNET_ID"),
-		VolumeSize:               8,
-	}
-	testEC2Connection = ec2utils.NewConnection()
-	var err error
-	reservation, err = testEC2Connection.CreateInstance(testParams)
-	if err != nil {
-		fmt.Printf("failed to create instance: %v", err)
-		os.Exit(1)
-	}
-
-	// Store the instance ID in a global variable for other tests to use
-	testInstanceID = *reservation.Instances[0].InstanceId
-}
-
 func TestMain(m *testing.M) {
-	if err := testEC2Connection.WaitForInstance(testInstanceID); err != nil {
-		fmt.Printf("failed to wait for instance: %v", err)
-		os.Exit(1)
-	}
-
-	if len(reservation.Instances) == 0 {
-		fmt.Println("No instances found in reservation")
-		os.Exit(1)
-	}
-
 	code := m.Run()
-
-	err := testEC2Connection.DestroyInstance(testInstanceID)
-	if err != nil {
-		fmt.Printf("failed to destroy instance: %v", err)
-		os.Exit(1)
-	}
-
 	os.Exit(code)
 }
 
@@ -83,32 +36,78 @@ func TestCreateInstance(t *testing.T) {
 	}
 	c := ec2utils.NewConnection()
 	reservation, err := c.CreateInstance(testParams)
+	// Schedule the instance to be destroyed after the test ends
+	defer func() {
+		err := c.DestroyInstance(*reservation.Instances[0].InstanceId)
+		if err != nil {
+			t.Fatalf("failed to destroy instance: %v", err)
+		}
+	}()
 	assert.NoError(t, err)
 	assert.NotNil(t, reservation)
-	instanceID := *reservation.Instances[0].InstanceId
+}
+
+func TestCheckInstanceExists(t *testing.T) {
+	testParams := ec2utils.Params{
+		AssociatePublicIPAddress: true,
+		ImageID:                  os.Getenv("AMI"),
+		InstanceName:             os.Getenv("INST_NAME"),
+		InstanceType:             os.Getenv("INST_TYPE"),
+		InstanceProfile:          os.Getenv("IAM_INSTANCE_PROFILE"),
+		MinCount:                 1,
+		MaxCount:                 1,
+		SecurityGroupIDs:         []string{os.Getenv("SEC_GRP_ID")},
+		SubnetID:                 os.Getenv("SUBNET_ID"),
+		VolumeSize:               8,
+	}
+	c := ec2utils.NewConnection()
+	reservation, err := c.CreateInstance(testParams)
+	assert.NoError(t, err)
+	assert.NotNil(t, reservation)
+
+	err = c.CheckInstanceExists(*reservation.Instances[0].InstanceId)
+	if err != nil {
+		t.Fatalf("instance %s does not exist", *reservation.Instances[0].InstanceId)
+	}
 
 	// Schedule the instance to be destroyed after the test ends
 	defer func() {
-		err := c.DestroyInstance(instanceID)
+		err := c.DestroyInstance(*reservation.Instances[0].InstanceId)
 		if err != nil {
 			t.Fatalf("failed to destroy instance: %v", err)
 		}
 	}()
 }
 
-func TestCheckInstanceExists(t *testing.T) {
-	// Test with the instance ID obtained from the setup
-	err := testEC2Connection.CheckInstanceExists(testInstanceID)
-	if err != nil {
-		t.Fatalf("instance %s does not exist", testInstanceID)
-	}
-}
-
 func TestTagInstance(t *testing.T) {
-	// Test with the instance ID obtained from the setup
-	err := testEC2Connection.TagInstance(testInstanceID, "key", "value")
+	testParams := ec2utils.Params{
+		AssociatePublicIPAddress: true,
+		ImageID:                  os.Getenv("AMI"),
+		InstanceName:             os.Getenv("INST_NAME"),
+		InstanceType:             os.Getenv("INST_TYPE"),
+		InstanceProfile:          os.Getenv("IAM_INSTANCE_PROFILE"),
+		MinCount:                 1,
+		MaxCount:                 1,
+		SecurityGroupIDs:         []string{os.Getenv("SEC_GRP_ID")},
+		SubnetID:                 os.Getenv("SUBNET_ID"),
+		VolumeSize:               8,
+	}
+
+	c := ec2utils.NewConnection()
+	reservation, err := c.CreateInstance(testParams)
+	// Schedule the instance to be destroyed after the test ends
+	defer func() {
+		err := c.DestroyInstance(*reservation.Instances[0].InstanceId)
+		if err != nil {
+			t.Fatalf("failed to destroy instance: %v", err)
+		}
+	}()
+	assert.NoError(t, err)
+	assert.NotNil(t, reservation)
+
+	err = c.TagInstance(*reservation.Instances[0].InstanceId, "key", "value")
 	if err != nil {
-		t.Fatalf("failed to tag instance %s: %v", testInstanceID, err)
+		t.Fatalf("failed to tag instance %s: %v", *reservation.Instances[0].InstanceId, err)
 	}
 }
 
@@ -128,54 +127,146 @@ func TestDestroyInstance(t *testing.T) {
 	}
 	c := ec2utils.NewConnection()
 	reservation, err := c.CreateInstance(testParams)
+	// Schedule the instance to be destroyed after the test ends
+	defer func() {
+		err := c.DestroyInstance(*reservation.Instances[0].InstanceId)
+		if err != nil {
+			t.Fatalf("failed to destroy instance: %v", err)
+		}
+	}()
 	assert.NoError(t, err)
 	assert.NotNil(t, reservation)
-	instanceID := *reservation.Instances[0].InstanceId
-
-	// Test the DestroyInstance function
-	err = c.DestroyInstance(instanceID)
-	if err != nil {
-		t.Fatalf("failed to destroy instance %s: %v", instanceID, err)
+	if err := c.WaitForInstance(*reservation.Instances[0].InstanceId); err != nil {
+		t.Fatalf("failed to wait for instance: %v", err)
 	}
 }
 
 func TestGetRunningInstances(t *testing.T) {
-	result, err := testEC2Connection.GetRunningInstances()
+	c := ec2utils.NewConnection()
+	result, err := c.GetRunningInstances()
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 }
 
 func TestWaitForInstance(t *testing.T) {
-	err := testEC2Connection.WaitForInstance(*reservation.Instances[0].InstanceId)
+	testParams := ec2utils.Params{
+		AssociatePublicIPAddress: true,
+		ImageID:                  os.Getenv("AMI"),
+		InstanceName:             os.Getenv("INST_NAME"),
+		InstanceType:             os.Getenv("INST_TYPE"),
+		InstanceProfile:          os.Getenv("IAM_INSTANCE_PROFILE"),
+		MinCount:                 1,
+		MaxCount:                 1,
+		SecurityGroupIDs:         []string{os.Getenv("SEC_GRP_ID")},
+		SubnetID:                 os.Getenv("SUBNET_ID"),
+		VolumeSize:               8,
+	}
+	c := ec2utils.NewConnection()
+	reservation, err := c.CreateInstance(testParams)
+	// Schedule the instance to be destroyed after the test ends
+	defer func() {
+		err := c.DestroyInstance(*reservation.Instances[0].InstanceId)
+		if err != nil {
+			t.Fatalf("failed to destroy instance: %v", err)
+		}
+	}()
+	assert.NoError(t, err)
+	assert.NotNil(t, reservation)
+	err = c.WaitForInstance(*reservation.Instances[0].InstanceId)
 	assert.NoError(t, err)
 }
 
 func TestGetInstancePublicIP(t *testing.T) {
-	ip, err := testEC2Connection.GetInstancePublicIP(*reservation.Instances[0].InstanceId)
+	testParams := ec2utils.Params{
+		AssociatePublicIPAddress: true,
+		ImageID:                  os.Getenv("AMI"),
+		InstanceName:             os.Getenv("INST_NAME"),
+		InstanceType:             os.Getenv("INST_TYPE"),
+		InstanceProfile:          os.Getenv("IAM_INSTANCE_PROFILE"),
+		MinCount:                 1,
+		MaxCount:                 1,
+		SecurityGroupIDs:         []string{os.Getenv("SEC_GRP_ID")},
+		SubnetID:                 os.Getenv("SUBNET_ID"),
+		VolumeSize:               8,
+	}
+	c := ec2utils.NewConnection()
+	reservation, err := c.CreateInstance(testParams)
+	if err != nil {
+		t.Fatalf("failed to create instance: %v", err)
+	}
+	if reservation == nil || len(reservation.Instances) == 0 || reservation.Instances[0] == nil {
+		t.Fatalf("no instances were created")
+	}
+	instanceID := *reservation.Instances[0].InstanceId
+	// Schedule the instance to be destroyed after the test ends
+	defer func() {
+		if err := c.DestroyInstance(instanceID); err != nil {
+			t.Fatalf("failed to destroy instance: %v", err)
+		}
+	}()
+
+	// Wait for the instance to be available before fetching the public IP
+	if err := c.WaitForInstance(instanceID); err != nil {
+		t.Fatalf("error waiting for instance: %v", err)
+	}
+
+	ip, err := c.GetInstancePublicIP(instanceID)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, ip)
 }
 
 func TestGetRegion(t *testing.T) {
-	region, err := testEC2Connection.GetRegion()
+	c := ec2utils.NewConnection()
+	region, err := c.GetRegion()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, region)
 }
 
 func TestGetInstances(t *testing.T) {
-	instances, err := testEC2Connection.GetInstances(nil)
+	c := ec2utils.NewConnection()
+	filters := []*ec2.Filter{
+		{
+			Name:   aws.String("instance-state-name"),
+			Values: []*string{aws.String("running")},
+		},
+	}
+	instances, err := c.GetInstances(filters)
 	assert.NoError(t, err)
 	assert.NotNil(t, instances)
 }
 
 func TestGetInstanceState(t *testing.T) {
-	state, err := testEC2Connection.GetInstanceState(*reservation.Instances[0].InstanceId)
+	testParams := ec2utils.Params{
+		AssociatePublicIPAddress: true,
+		ImageID:                  os.Getenv("AMI"),
+		InstanceName:             os.Getenv("INST_NAME"),
+		InstanceType:             os.Getenv("INST_TYPE"),
+		InstanceProfile:          os.Getenv("IAM_INSTANCE_PROFILE"),
+		MinCount:                 1,
+		MaxCount:                 1,
+		SecurityGroupIDs:         []string{os.Getenv("SEC_GRP_ID")},
+		SubnetID:                 os.Getenv("SUBNET_ID"),
+		VolumeSize:               8,
+	}
+	c := ec2utils.NewConnection()
+	reservation, err := c.CreateInstance(testParams)
+	// Schedule the instance to be destroyed after the test ends
+	defer func() {
+		err := c.DestroyInstance(*reservation.Instances[0].InstanceId)
+		if err != nil {
+			t.Fatalf("failed to destroy instance: %v", err)
+		}
+	}()
+	assert.NoError(t, err)
+	assert.NotNil(t, reservation)
+	state, err := c.GetInstanceState(*reservation.Instances[0].InstanceId)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, state)
 }
 
 func TestGetInstancesRunningForMoreThan24Hours(t *testing.T) {
-	instances, err := testEC2Connection.GetInstancesRunningForMoreThan24Hours()
+	c := ec2utils.NewConnection()
+	instances, err := c.GetInstancesRunningForMoreThan24Hours()
 	assert.NoError(t, err)
 	assert.NotNil(t, instances)
 }
@@ -225,7 +316,8 @@ func TestGetLatestAMI(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			gotOutput, gotError := testEC2Connection.GetLatestAMI(tc.input)
+			c := ec2utils.NewConnection()
+			gotOutput, gotError := c.GetLatestAMI(tc.input)
 
 			if gotError != nil {
 				assert.Error(t, gotError)
@@ -244,7 +336,8 @@ func TestGetLatestAMI(t *testing.T) {
 }
 
 func TestListSecurityGroupsForSubnet(t *testing.T) {
-	validSubnetID, err := testEC2Connection.GetSubnetID("test-subnet-2")
+	c := ec2utils.NewConnection()
+	validSubnetID, err := c.GetSubnetID("test-subnet-2")
 	if err != nil {
 		t.Fatalf("failed to get VPC ID: %v", err)
 	}
@@ -268,7 +361,7 @@ func TestListSecurityGroupsForSubnet(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			_, gotError := testEC2Connection.ListSecurityGroupsForSubnet(tc.subnetID)
+			_, gotError := c.ListSecurityGroupsForSubnet(tc.subnetID)
 
 			if tc.expectErr {
 				assert.Error(t, gotError)
@@ -280,7 +373,8 @@ func TestListSecurityGroupsForSubnet(t *testing.T) {
 }
 
 func TestIsSubnetPubliclyRoutable(t *testing.T) {
-	routableSubnetID, err := testEC2Connection.GetSubnetID("test-subnet-2")
+	c := ec2utils.NewConnection()
+	routableSubnetID, err := c.GetSubnetID("test-subnet-2")
 	if err != nil {
 		t.Fatalf("failed to get VPC ID: %v", err)
 	}
@@ -304,7 +398,8 @@ func TestIsSubnetPubliclyRoutable(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			_, gotError := testEC2Connection.IsSubnetPubliclyRoutable(tc.subnetID)
+			c := ec2utils.NewConnection()
+			_, gotError := c.IsSubnetPubliclyRoutable(tc.subnetID)
 
 			if tc.expectErr {
 				assert.Error(t, gotError)
@@ -316,7 +411,8 @@ func TestIsSubnetPubliclyRoutable(t *testing.T) {
 }
 
 func TestListSecurityGroupsForVpc(t *testing.T) {
-	validVPCID, err := testEC2Connection.GetVPCID("test-vpc")
+	c := ec2utils.NewConnection()
+	validVPCID, err := c.GetVPCID("test-vpc")
 	if err != nil {
 		t.Fatalf("failed to get VPC ID: %v", err)
 	}
@@ -340,7 +436,8 @@ func TestListSecurityGroupsForVpc(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			_, gotError := testEC2Connection.ListSecurityGroupsForVpc(tc.vpcID)
+			c := ec2utils.NewConnection()
+			_, gotError := c.ListSecurityGroupsForVpc(tc.vpcID)
 
 			if tc.expectErr {
 				assert.Error(t, gotError)
@@ -371,7 +468,8 @@ func TestGetSubnetID(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			_, gotError := testEC2Connection.GetSubnetID(tc.subnetName)
+			c := ec2utils.NewConnection()
+			_, gotError := c.GetSubnetID(tc.subnetName)
 
 			if tc.expectErr {
 				assert.Error(t, gotError)
@@ -402,7 +500,8 @@ func TestGetVPCID(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			_, gotError := testEC2Connection.GetVPCID(tc.vpcName)
+			c := ec2utils.NewConnection()
+			_, gotError := c.GetVPCID(tc.vpcName)
 
 			if tc.expectErr {
 				assert.Error(t, gotError)
@@ -414,27 +513,49 @@ func TestGetVPCID(t *testing.T) {
 }
 
 func TestCreateSecurityGroup(t *testing.T) {
+	c := ec2utils.NewConnection()
+	vpcID, err := c.GetVPCID("default")
+	if err != nil {
+		t.Fatalf("failed to get VPC ID: %v", err)
+	}
+
 	tests := []struct {
 		name            string
 		groupName       string
 		description     string
-		vpcId           string
+		vpcID           string
 		expectedGroupID string
 		expectErr       bool
 	}{
 		{
-			name:            "Valid Inputs",
+			name:            "Valid Input",
 			groupName:       "test-group",
 			description:     "test description",
-			vpcId:           "test-vpc-id",
-			expectedGroupID: "test-group-id",
+			vpcID:           vpcID,
+			expectedGroupID: "",
 			expectErr:       false,
 		},
 		{
-			name:            "Invalid Inputs",
+			name:            "Empty Group Name",
 			groupName:       "",
+			description:     "test description",
+			vpcID:           vpcID,
+			expectedGroupID: "",
+			expectErr:       true,
+		},
+		{
+			name:            "Empty Description",
+			groupName:       "test-group",
 			description:     "",
-			vpcId:           "",
+			vpcID:           vpcID,
+			expectedGroupID: "",
+			expectErr:       true,
+		},
+		{
+			name:            "Empty VPC ID",
+			groupName:       "test-group",
+			description:     "test description",
+			vpcID:           "non-existent-vpc-id",
 			expectedGroupID: "",
 			expectErr:       true,
 		},
@@ -442,43 +563,82 @@ func TestCreateSecurityGroup(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			groupID, err := testEC2Connection.CreateSecurityGroup(tc.groupName, tc.description, tc.vpcId)
+			// Create Security Group first
+			groupID, err := c.CreateSecurityGroup(tc.groupName, tc.description, tc.vpcID)
+
+			// Check error for CreateSecurityGroup
 			if tc.expectErr {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tc.expectedGroupID, groupID)
+			}
+
+			// Ensure group id was populated
+			if groupID == "" && !tc.expectErr {
+				t.Errorf("groupID should not be empty, but was: %v", groupID)
+			}
+
+			// Defer the destruction of the security group if creation was successful
+			if err == nil {
+				defer func() {
+					err := c.DestroySecurityGroup(groupID)
+					if err != nil {
+						t.Errorf("failed to destroy security group: %v", err)
+					}
+				}()
 			}
 		})
 	}
 }
 
 func TestDestroySecurityGroup(t *testing.T) {
+	c := ec2utils.NewConnection()
+	vpcID, err := c.GetVPCID("default")
+	if err != nil {
+		t.Fatalf("failed to get VPC ID: %v", err)
+	}
 	tests := []struct {
-		name      string
-		groupId   string
-		expectErr bool
+		name             string
+		groupName        string
+		description      string
+		vpcID            string
+		expectCreateErr  bool
+		expectDestroyErr bool
 	}{
 		{
-			name:      "Valid Group ID",
-			groupId:   "test-group-id",
-			expectErr: false,
-		},
-		{
-			name:      "Invalid Group ID",
-			groupId:   "",
-			expectErr: true,
+			name:             "group-to-destroy",
+			groupName:        "test-group",
+			description:      "test description",
+			vpcID:            vpcID,
+			expectCreateErr:  false,
+			expectDestroyErr: false,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			// Create Security Group first
+			groupID, createErr := c.CreateSecurityGroup(tc.groupName, tc.description, tc.vpcID)
 
-			err := testEC2Connection.DestroySecurityGroup(tc.groupId)
-			if tc.expectErr {
-				assert.Error(t, err)
+			// Check error for CreateSecurityGroup
+			if tc.expectCreateErr {
+				assert.Error(t, createErr)
 			} else {
-				assert.NoError(t, err)
+				assert.NoError(t, createErr)
+			}
+
+			// If CreateSecurityGroup was successful, try to destroy it
+			if createErr == nil {
+				defer func() {
+					destroyErr := c.DestroySecurityGroup(groupID)
+
+					// Check error for DestroySecurityGroup
+					if tc.expectDestroyErr {
+						assert.Error(t, destroyErr)
+					} else {
+						assert.NoError(t, destroyErr)
+					}
+				}()
 			}
 		})
 	}
