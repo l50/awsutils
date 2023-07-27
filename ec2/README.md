@@ -56,6 +56,31 @@ error: an error if any issue occurs while trying to create the instance
 
 ---
 
+### Connection.CreateSecurityGroup(string)
+
+```go
+CreateSecurityGroup(string) string, error
+```
+
+CreateSecurityGroup creates a new security group with the provided name,
+description and VPC ID.
+
+**Parameters:**
+
+groupName: the name of the security group to use
+
+description: the description of the security group to use
+
+vpcID: the ID of the VPC to use
+
+**Returns:**
+
+string: the ID of the created security group
+
+error: an error if any issue occurs while trying to create the security group
+
+---
+
 ### Connection.DestroyInstance(string)
 
 ```go
@@ -71,6 +96,24 @@ instanceID: the ID of the instance to destroy
 **Returns:**
 
 error: an error if any issue occurs while trying to destroy the instance
+
+---
+
+### Connection.DestroySecurityGroup(string)
+
+```go
+DestroySecurityGroup(string) error
+```
+
+DestroySecurityGroup destroys the security group with the provided ID.
+
+**Parameters:**
+
+groupId: the ID of the security group to destroy
+
+**Returns:**
+
+error: an error if any issue occurs while trying to destroy the security group
 
 ---
 
@@ -269,7 +312,8 @@ GetVPCID retrieves the ID of the VPC with the provided name.
 
 **Parameters:**
 
-vpcName: the name of the VPC to use
+vpcName: the name of the VPC to use. If "default" is provided, the function
+will return the ID of the default VPC.
 
 **Returns:**
 
