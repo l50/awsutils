@@ -7,7 +7,7 @@ on:
 
 env:
   AMI: ${{ secrets.AMI }}
-  INST_NAME: actionsGoInstance
+  INST_NAME: goawsutilsGHActionTest
   INST_TYPE: t3.micro
   IAM_INSTANCE_PROFILE: AmazonSSMInstanceProfileForInstances
   SEC_GRP_ID: ${{ secrets.SEC_GRP_ID }}
