@@ -3,7 +3,7 @@ module github.com/l50/awsutils
 go 1.20
 
 require (
-	github.com/aws/aws-sdk-go v1.46.6
+	github.com/aws/aws-sdk-go v1.46.7
 	github.com/google/uuid v1.3.1
 	github.com/l50/goutils/v2 v2.0.9
 	github.com/stretchr/testify v1.8.4
