@@ -13,22 +13,30 @@ This repo is comprised of aws utilities that I use across various go projects.
 
 ## Dependencies
 
-- [Install gvm](https://github.com/moovweb/gvm):
+- [Install asdf](https://asdf-vm.com/):
 
   ```bash
-  bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
+  git clone https://github.com/asdf-vm/asdf.git ~/.asdf
   ```
 
-- [Install golang](https://go.dev/):
+- Install and use asdf plugins to manage go, python, and ruby for this project:
 
   ```bash
-  source .gvm
+  source .asdf
+  ```
+
+  Alternatively, you can pick and choose which plugins to install:
+
+  ```bash
+  # Employ asdf for this project's python:
+  source .asdf python
   ```
 
 - [Install pre-commit](https://pre-commit.com/):
 
   ```bash
-  brew install pre-commit
+  python3 -m pip install --upgrade pip
+  python3 -m pip install pre-commit
   ```
 
 - [Install Mage](https://magefile.org/):
@@ -41,21 +49,56 @@ This repo is comprised of aws utilities that I use across various go projects.
 
 ---
 
-## Developer Environment Setup
+## For Contributors and Developers
 
 1. [Fork this project](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
 
-1. (Optional) If you installed gvm:
+1. Install dependencies:
 
    ```bash
-   source "${HOME}/.gvm"
+   mage installDeps
    ```
 
-1. Install pre-commit hooks and dependencies:
+1. Update and run pre-commit hooks locally:
 
    ```bash
-   mage installPreCommitHooks
+   mage runPreCommit
    ```
+
+---
+
+## Create New Release
+
+- Download and install the [gh cli tool](https://cli.github.com/):
+
+  - [macOS](https://github.com/cli/cli#macos)
+  - [Linux](https://github.com/cli/cli/blob/trunk/docs/install_linux.md)
+  - [Windows](https://github.com/cli/cli#windows)
+
+- Install changelog extension:
+
+  ```bash
+  gh extension install chelnak/gh-changelog
+  ```
+
+- Generate changelog:
+
+  ```bash
+  NEXT_VERSION=v1.1.3
+  gh changelog new --next-version "${NEXT_VERSION}"
+  ```
+
+- Create release:
+
+  ```bash
+  gh release create "${NEXT_VERSION}" -F CHANGELOG.md
+  ```
+
+---
+
+## Developer Environment Setup
+
+1. [Fork this project](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
 
 1. Update and run pre-commit hooks locally:
 
