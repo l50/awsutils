@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/l50/goutils/v2/dev/lint"
 	mageutils "github.com/l50/goutils/v2/dev/mage"
 	"github.com/l50/goutils/v2/docs"
@@ -28,20 +29,46 @@ func init() {
 	os.Setenv("GO111MODULE", "on")
 }
 
-// InstallDeps Installs go dependencies
+// InstallDeps installs the Go dependencies necessary for developing
+// on the project.
+//
+// Example usage:
+//
+// ```go
+// mage installdeps
+// ```
+//
+// **Returns:**
+//
+// error: An error if any issue occurs while trying to
+// install the dependencies.
 func InstallDeps() error {
-	fmt.Println("Installing dependencies.")
+	fmt.Println(color.YellowString("Running go mod tidy on magefiles and repo root."))
+	cwd := sys.Gwd()
+	if err := sys.Cd("magefiles"); err != nil {
+		return fmt.Errorf("failed to cd into magefiles directory: %v", err)
+	}
 
 	if err := mageutils.Tidy(); err != nil {
 		return fmt.Errorf("failed to install dependencies: %v", err)
 	}
 
+	if err := sys.Cd(cwd); err != nil {
+		return fmt.Errorf("failed to cd back into repo root: %v", err)
+	}
+
+	if err := mageutils.Tidy(); err != nil {
+		return fmt.Errorf("failed to install dependencies: %v", err)
+	}
+
+	fmt.Println(color.YellowString("Installing dependencies."))
 	if err := lint.InstallGoPCDeps(); err != nil {
 		return fmt.Errorf("failed to install pre-commit dependencies: %v", err)
 	}
 
 	if err := mageutils.InstallVSCodeModules(); err != nil {
-		return fmt.Errorf("failed to install vscode-go modules: %v", err)
+		return fmt.Errorf(color.RedString(
+			"failed to install vscode-go modules: %v", err))
 	}
 
 	return nil
@@ -63,8 +90,18 @@ func FindExportedFuncsWithoutTests(pkg string) ([]string, error) {
 
 }
 
-// GeneratePackageDocs generates package documentation
-// for packages in the current directory and its subdirectories.
+// GeneratePackageDocs creates documentation for the various packages
+// in the project.
+//
+// Example usage:
+//
+// ```go
+// mage generatepackagedocs
+// ```
+//
+// **Returns:**
+//
+// error: An error if any issue occurs during documentation generation.
 func GeneratePackageDocs() error {
 	fs := afero.NewOsFs()
 
@@ -79,29 +116,49 @@ func GeneratePackageDocs() error {
 		Name:  "awsutils",
 	}
 
-	template := filepath.Join(repoRoot, "magefiles", "tmpl", "README.md.tmpl")
-	if err := docs.CreatePackageDocs(fs, repo, template); err != nil {
+	templatePath := filepath.Join("magefiles", "tmpl", "README.md.tmpl")
+	if err := docs.CreatePackageDocs(fs, repo, templatePath); err != nil {
 		return fmt.Errorf("failed to create package docs: %v", err)
 	}
-
-	fmt.Println("Package docs created.")
 
 	return nil
 }
 
-// RunPreCommit runs all pre-commit hooks locally
+// RunPreCommit updates, clears, and executes all pre-commit hooks
+// locally. The function follows a three-step process:
+//
+// First, it updates the pre-commit hooks.
+// Next, it clears the pre-commit cache to ensure a clean environment.
+// Lastly, it executes all pre-commit hooks locally.
+//
+// Example usage:
+//
+// ```go
+// mage runprecommit
+// ```
+//
+// **Returns:**
+//
+// error: An error if any issue occurs at any of the three stages
+// of the process.
 func RunPreCommit() error {
-	fmt.Println("Updating pre-commit hooks.")
+	if !sys.CmdExists("pre-commit") {
+		return fmt.Errorf("pre-commit is not installed, please follow the " +
+			"instructions in the dev doc: " +
+			"https://github.com/facebookincubator/TTPForge/tree/main/docs/dev")
+	}
+
+	fmt.Println(color.YellowString("Updating pre-commit hooks."))
 	if err := lint.UpdatePCHooks(); err != nil {
 		return err
 	}
 
-	fmt.Println("Clearing the pre-commit cache to ensure we have a fresh start.")
+	fmt.Println(color.YellowString("Clearing the pre-commit cache to ensure we have a fresh start."))
 	if err := lint.ClearPCCache(); err != nil {
 		return err
 	}
 
-	fmt.Println("Running all pre-commit hooks locally.")
+	fmt.Println(color.YellowString("Running all pre-commit hooks locally."))
 	if err := lint.RunPCHooks(); err != nil {
 		return err
 	}
@@ -122,8 +179,22 @@ func RunTests(testType string) error {
 	return nil
 }
 
-// UpdateMirror updates pkg.go.dev and proxy.golang.org with the
-// release associated with the input tag
+// UpdateMirror updates pkg.go.dev with the release associated with the
+// input tag
+//
+// Example usage:
+//
+// ```go
+// mage updatemirror v2.0.1
+// ```
+//
+// **Parameters:**
+//
+// tag: the tag to update pkg.go.dev with
+//
+// **Returns:**
+//
+// error: An error if any issue occurs while updating pkg.go.dev
 func UpdateMirror(tag string) error {
 	var err error
 	fmt.Printf("Updating pkg.go.dev with the new tag %s.", tag)

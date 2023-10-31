@@ -3,7 +3,9 @@
 The `s3` package is a collection of utility functions
 designed to simplify common s3 tasks.
 
-Table of contents:
+---
+
+## Table of contents
 
 - [Functions](#functions)
 - [Installation](#installation)
@@ -202,7 +204,7 @@ import "github.com/l50/awsutils/s3"
 ## Tests
 
 To ensure the package is working correctly, run the following
-command to execute the tests for `s3/awsutils`:
+command to execute the tests for `awsutils/s3`:
 
 ```bash
 go test -v

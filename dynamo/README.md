@@ -3,7 +3,9 @@
 The `dynamo` package is a collection of utility functions
 designed to simplify common dynamo tasks.
 
-Table of contents:
+---
+
+## Table of contents
 
 - [Functions](#functions)
 - [Installation](#installation)
@@ -108,7 +110,7 @@ import "github.com/l50/awsutils/dynamo"
 ## Tests
 
 To ensure the package is working correctly, run the following
-command to execute the tests for `dynamo/awsutils`:
+command to execute the tests for `awsutils/dynamo`:
 
 ```bash
 go test -v

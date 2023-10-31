@@ -3,7 +3,9 @@
 The `ec2` package is a collection of utility functions
 designed to simplify common ec2 tasks.
 
-Table of contents:
+---
+
+## Table of contents
 
 - [Functions](#functions)
 - [Installation](#installation)
@@ -503,7 +505,7 @@ import "github.com/l50/awsutils/ec2"
 ## Tests
 
 To ensure the package is working correctly, run the following
-command to execute the tests for `ec2/awsutils`:
+command to execute the tests for `awsutils/ec2`:
 
 ```bash
 go test -v

@@ -3,7 +3,9 @@
 The `ssm` package is a collection of utility functions
 designed to simplify common ssm tasks.
 
-Table of contents:
+---
+
+## Table of contents
 
 - [Functions](#functions)
 - [Installation](#installation)
@@ -197,7 +199,7 @@ import "github.com/l50/awsutils/ssm"
 ## Tests
 
 To ensure the package is working correctly, run the following
-command to execute the tests for `ssm/awsutils`:
+command to execute the tests for `awsutils/ssm`:
 
 ```bash
 go test -v

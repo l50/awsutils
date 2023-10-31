@@ -3,7 +3,9 @@
 The `secretsmanager` package is a collection of utility functions
 designed to simplify common secretsmanager tasks.
 
-Table of contents:
+---
+
+## Table of contents
 
 - [Functions](#functions)
 - [Installation](#installation)
@@ -116,7 +118,7 @@ import "github.com/l50/awsutils/secretsmanager"
 ## Tests
 
 To ensure the package is working correctly, run the following
-command to execute the tests for `secretsmanager/awsutils`:
+command to execute the tests for `awsutils/secretsmanager`:
 
 ```bash
 go test -v

@@ -1,14 +1,19 @@
 # awsutils/{{.PackageName}}
 
-The `{{.PackageName}}` package is a collection of utility functions
+{{if ne .PackageName "magefiles"}}The `{{.PackageName}}` package is a collection of utility functions
 designed to simplify common {{.PackageName}} tasks.
+{{else}}`{{.PackageName}}` provides utilities that would normally be managed
+and executed with a `Makefile`. Instead of being written in the make language,
+magefiles are crafted in Go and leverage the [Mage](https://magefile.org/) library.
+{{end}}
+---
 
-Table of contents:
+## Table of contents
 
-- [Functions](#functions)
+- [Functions](#functions){{if ne .PackageName "magefiles"}}
 - [Installation](#installation)
 - [Usage](#usage)
-- [Tests](#tests)
+- [Tests](#tests){{end}}
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -24,7 +29,7 @@ Table of contents:
 
 {{.Description}}
 ---
-{{end}}
+{{end}}{{if ne .PackageName "magefiles"}}
 ## Installation
 
 To use the awsutils/{{.PackageName}} package, you first need to install it.
@@ -50,14 +55,14 @@ import "{{.GoGetPath}}"
 ## Tests
 
 To ensure the package is working correctly, run the following
-command to execute the tests for `{{.PackageName}}/awsutils`:
+command to execute the tests for `awsutils/{{.PackageName}}`:
 
 ```bash
 go test -v
 ```
 
 ---
-
+{{end}}
 ## Contributing
 
 Pull requests are welcome. For major changes,

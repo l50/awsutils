@@ -3,7 +3,9 @@
 The `iam` package is a collection of utility functions
 designed to simplify common iam tasks.
 
-Table of contents:
+---
+
+## Table of contents
 
 - [Functions](#functions)
 - [Installation](#installation)
@@ -51,7 +53,7 @@ import "github.com/l50/awsutils/iam"
 ## Tests
 
 To ensure the package is working correctly, run the following
-command to execute the tests for `iam/awsutils`:
+command to execute the tests for `awsutils/iam`:
 
 ```bash
 go test -v
