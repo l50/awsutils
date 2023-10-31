@@ -17,7 +17,6 @@ import (
 	"github.com/l50/goutils/v2/dev/lint"
 	mageutils "github.com/l50/goutils/v2/dev/mage"
 	"github.com/l50/goutils/v2/docs"
-	fileutils "github.com/l50/goutils/v2/file/fileutils"
 	"github.com/l50/goutils/v2/git"
 	"github.com/l50/goutils/v2/sys"
 	"github.com/magefile/mage/mg"
@@ -235,33 +234,6 @@ func UpdateDocs() error {
 
 	if err := docs.CreatePackageDocs(fs, repo, templatePath); err != nil {
 		return fmt.Errorf("failed to update docs: %v", err)
-	}
-
-	return nil
-}
-
-// UseFixCodeBlocks fixes code blocks for the input filepath
-// using the input language.
-//
-// **Parameters:**
-//
-// filepath: the path to the file or directory to fix
-// language: the language of the code blocks to fix
-//
-// **Returns:**
-//
-// error: an error if one occurred
-//
-// Example:
-//
-// ```go
-// mage fixcodeblocks docs/docGeneration.go go
-// ```
-func UseFixCodeBlocks(filepath string, language string) error {
-	file := fileutils.RealFile(filepath)
-
-	if err := docs.FixCodeBlocks(file, language); err != nil {
-		return fmt.Errorf("failed to fix code blocks: %v", err)
 	}
 
 	return nil
