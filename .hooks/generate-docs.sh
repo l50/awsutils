@@ -35,7 +35,7 @@ else
     exit 1
 fi
 
-repo_root
+rr
 
 # Run the mage generatepackagedocs command
 $(command -v mage) generatepackagedocs

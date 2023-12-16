@@ -9,7 +9,6 @@
     ":enablePreCommit",
     ":automergeDigest",
     ":automergeBranch",
-    "github>l50/goutils//.github/renovate/autoMerge.json5",
     "helpers:pinGitHubActionDigests"
   ],
   "platform": "github",
@@ -22,11 +21,23 @@
   "pre-commit": {
     "enabled": true
   },
-  "regexManagers": [
+  "packageRules": [
     {
-      "fileMatch": [
-        ".sh$"
-      ],
+      "matchManagers": ["gomod"],
+      "matchPackagePatterns": ["*"],
+      "enabled": true
+    },
+    {
+      "description": "Auto merge GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "automerge": true,
+      "automergeType": "pr"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": [".sh$"],
       "matchStrings": [
         "go install (?<depName>[^@]+?)@(?<currentValue>[0-9.-a-zA-Z]+)"
       ],
