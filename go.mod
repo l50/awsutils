@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/aws/aws-sdk-go v1.46.7
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.5.0
 	github.com/l50/goutils/v2 v2.0.9
 	github.com/stretchr/testify v1.8.4
 )
@@ -33,6 +33,6 @@ require (
 	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/tools v0.9.3 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
