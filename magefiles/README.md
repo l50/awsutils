@@ -1,14 +1,14 @@
-# awsutils/main
+# awsutils/magefiles
 
-The `main` package is a collection of utility functions
-designed to simplify common main tasks.
+`magefiles` provides utilities that would normally be managed
+and executed with a `Makefile`. Instead of being written in the make language,
+magefiles are crafted in Go and leverage the [Mage](https://magefile.org/) library.
 
-Table of contents:
+---
+
+## Table of contents
 
 - [Functions](#functions)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Tests](#tests)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -32,8 +32,18 @@ FindExportedFuncsWithoutTests finds exported functions without tests
 GeneratePackageDocs() error
 ```
 
-GeneratePackageDocs generates package documentation
-for packages in the current directory and its subdirectories.
+GeneratePackageDocs creates documentation for the various packages
+in the project.
+
+Example usage:
+
+```go
+mage generatepackagedocs
+```
+
+**Returns:**
+
+error: An error if any issue occurs during documentation generation.
 
 ---
 
@@ -43,7 +53,29 @@ for packages in the current directory and its subdirectories.
 InstallDeps() error
 ```
 
-InstallDeps Installs go dependencies
+InstallDeps installs the Go dependencies necessary for developing
+on the project.
+
+Example usage:
+
+```go
+mage installdeps
+```
+
+**Returns:**
+
+error: An error if any issue occurs while trying to
+install the dependencies.
+
+---
+
+### Run()
+
+```go
+Run() error
+```
+
+Run runs the unit tests and extracts failing functions and their tests.
 
 ---
 
@@ -53,7 +85,23 @@ InstallDeps Installs go dependencies
 RunPreCommit() error
 ```
 
-RunPreCommit runs all pre-commit hooks locally
+RunPreCommit updates, clears, and executes all pre-commit hooks
+locally. The function follows a three-step process:
+
+First, it updates the pre-commit hooks.
+Next, it clears the pre-commit cache to ensure a clean environment.
+Lastly, it executes all pre-commit hooks locally.
+
+Example usage:
+
+```go
+mage runprecommit
+```
+
+**Returns:**
+
+error: An error if any issue occurs at any of the three stages
+of the process.
 
 ---
 
@@ -84,67 +132,22 @@ for packages in the current directory and its subdirectories.
 UpdateMirror(string) error
 ```
 
-UpdateMirror updates pkg.go.dev and proxy.golang.org with the
-release associated with the input tag
+UpdateMirror updates pkg.go.dev with the release associated with the
+input tag
 
----
-
-### UseFixCodeBlocks(string, string)
+Example usage:
 
 ```go
-UseFixCodeBlocks(string, string) error
+mage updatemirror v2.0.1
 ```
-
-UseFixCodeBlocks fixes code blocks for the input filepath
-using the input language.
 
 **Parameters:**
 
-filepath: the path to the file or directory to fix
-language: the language of the code blocks to fix
+tag: the tag to update pkg.go.dev with
 
 **Returns:**
 
-error: an error if one occurred
-
-Example:
-
-```go
-mage fixcodeblocks docs/docGeneration.go go
-```
-
----
-
-## Installation
-
-To use the awsutils/main package, you first need to install it.
-Follow the steps below to install via go get.
-
-```bash
-go get github.com/awsutils/l50/main
-```
-
----
-
-## Usage
-
-After installation, you can import the package in your Go project
-using the following import statement:
-
-```go
-import "github.com/awsutils/l50/main"
-```
-
----
-
-## Tests
-
-To ensure the package is working correctly, run the following
-command to execute the tests for `main/awsutils`:
-
-```bash
-go test -v
-```
+error: An error if any issue occurs while updating pkg.go.dev
 
 ---
 
