@@ -1,33 +1,38 @@
 ---
 area/github:
-  - ".github/**/*"
+  - changed-files:
+      - any-glob-to-any-file: ".github/**/*"
 
 area/pre-commit:
-  - ".pre-commit-config.yaml"
-  - ".hooks/**/*"
+  - changed-files:
+      - any-glob-to-any-file: .pre-commit-config.yaml
+      - any-glob-to-any-file: .hooks/**/*
 
 area/dynamo:
-  - "dynamo/*.go"
+  - changed-files:
+      - any-glob-to-any-file: "dynamo/*.go"
 
 area/secretsmanager:
-  - "secretsmanager/*.go"
+  - changed-files:
+      - any-glob-to-any-file: "secretsmanager/*.go"
 
 area/ssm:
-  - "ssm/*.go"
+  - changed-files:
+      - any-glob-to-any-file: "ssm/*.go"
 
 area/ec2:
-  - "ec2/*.go"
+  - changed-files:
+      - any-glob-to-any-file: "ec2/*.go"
 
 area/s3:
-  - "s3/*.go"
+  - changed-files:
+      - any-glob-to-any-file: "s3/*.go"
 
 area/magefiles:
-  - "magefiles/*"
-
-area/asdf:
-  - ".asdf"
-  - ".tool-versions"
+  - changed-files:
+      - any-glob-to-any-file: "magefiles/*"
 
 area/go-mod-sum:
-  - "go.mod"
-  - "go.sum"
+  - changed-files:
+      - any-glob-to-any-file: "go.mod"
+      - any-glob-to-any-file: "go.sum"
