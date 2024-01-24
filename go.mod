@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/aws/aws-sdk-go v1.49.20
-	github.com/google/uuid v1.5.0
+	github.com/google/uuid v1.6.0
 	github.com/l50/goutils/v2 v2.2.2
 	github.com/stretchr/testify v1.8.4
 )
