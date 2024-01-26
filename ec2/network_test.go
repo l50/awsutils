@@ -151,7 +151,7 @@ func TestListSecurityGroupsForVpc(t *testing.T) {
 	}
 }
 
-func TestListSubnetsForVpc(t *testing.T) {
+func TestListSubnetsForVPC(t *testing.T) {
 	tests := []struct {
 		name             string
 		vpcName          string
@@ -191,7 +191,7 @@ func TestListSubnetsForVpc(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			c := ec2utils.NewConnection()
-			gotSubnets, gotError := c.ListSubnetsForVpc(tc.vpcName, tc.subnetLocation)
+			gotSubnets, gotError := c.ListSubnetsForVPC(tc.vpcName, tc.subnetLocation)
 
 			if tc.wantErr != nil {
 				if gotError == nil {

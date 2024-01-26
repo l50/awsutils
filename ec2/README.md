@@ -405,13 +405,13 @@ error: an error if any issue occurs while trying to list the security groups
 
 ---
 
-### Connection.ListSubnetsForVpc(string, string)
+### Connection.ListSubnetsForVPC(string, string)
 
 ```go
-ListSubnetsForVpc(string, string) []*ec2.Subnet, error
+ListSubnetsForVPC(string, string) []*ec2.Subnet, error
 ```
 
-ListSubnetsForVpc lists subnets for the provided VPC name and subnet location.
+ListSubnetsForVPC lists subnets for the provided VPC name and subnet location.
 
 **Parameters:**
 
