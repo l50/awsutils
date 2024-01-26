@@ -15,3 +15,4 @@ magefile
 # Test Artifacts
 testFile
 */test_env
+coverage-all.out
