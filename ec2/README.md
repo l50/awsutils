@@ -405,6 +405,27 @@ error: an error if any issue occurs while trying to list the security groups
 
 ---
 
+### Connection.ListSubnetsForVpc(string, string)
+
+```go
+ListSubnetsForVpc(string, string) []*ec2.Subnet, error
+```
+
+ListSubnetsForVpc lists subnets for the provided VPC name and subnet location.
+
+**Parameters:**
+
+vpcName: the name of the VPC to use. Returns subnets for the default VPC if "default" is provided.
+subnetLocation: the location of the subnet. Can be "public", "private", or "all".
+
+**Returns:**
+
+[]*ec2.Subnet: the list of subnets for the provided VPC name and location
+
+error: an error if any issue occurs while trying to list the subnets
+
+---
+
 ### Connection.TagInstance(string, string, string)
 
 ```go
