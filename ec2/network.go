@@ -185,11 +185,6 @@ func (c *Connection) ListSecurityGroupsForVpc(vpcID string) ([]*ec2.SecurityGrou
 //
 // error: an error if any issue occurs while trying to list the subnets
 func (c *Connection) ListSubnetsForVPC(vpcName string, subnetLocation string) ([]*ec2.Subnet, error) {
-	// Check if vpcName is not default
-	if vpcName != "default" {
-		return nil, errors.New("only default VPC is supported")
-	}
-
 	// Retrieve the VPC ID for the default VPC
 	vpcID, err := c.GetVPCID(vpcName)
 	if err != nil {
