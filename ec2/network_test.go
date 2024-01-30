@@ -172,6 +172,11 @@ func TestGetVPCID(t *testing.T) {
 			expectErr: false,
 		},
 		{
+			name:      "Default VPC",
+			vpcName:   "default",
+			expectErr: false,
+		},
+		{
 			name:      "Invalid VPC Name",
 			vpcName:   "InvalidVPC",
 			expectErr: true,
