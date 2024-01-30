@@ -299,35 +299,45 @@ func (c *Connection) ListVPCSubnets(vpcID string, subnetLocation string) ([]*ec2
 		return nil, err
 	}
 
-	var subnets []*ec2.Subnet
-	for _, subnet := range result.Subnets {
+	return c.classifySubnets(result.Subnets, subnetLocation)
+}
+
+func (c *Connection) classifySubnets(subnets []*ec2.Subnet, subnetLocation string) ([]*ec2.Subnet, error) {
+	var classifiedSubnets []*ec2.Subnet
+	for _, subnet := range subnets {
 		if subnetLocation == "all" {
-			subnets = append(subnets, subnet)
+			classifiedSubnets = append(classifiedSubnets, subnet)
 			continue
 		}
 
 		isPublic, err := c.IsSubnetPublic(*subnet.SubnetId)
 		if err != nil {
-			if subnetLocation == "private" && isNoRouteTableError(err) {
-				// Verify if the subnet is truly private by checking all route tables
-				isReallyPrivate, verifyErr := c.isSubnetReallyPrivate(*subnet.SubnetId)
-				if verifyErr != nil {
-					return nil, verifyErr
-				}
-				if isReallyPrivate {
-					subnets = append(subnets, subnet)
-					continue
-				}
+			classifiedSubnets, err = c.handleSubnetClassificationError(err, subnet, subnetLocation, classifiedSubnets)
+			if err != nil {
+				return nil, err
 			}
-			return nil, fmt.Errorf("error checking if subnet %s is publicly routable: %v", *subnet.SubnetId, err)
+			continue
 		}
 
 		if (subnetLocation == "public" && isPublic) || (subnetLocation == "private" && !isPublic) {
-			subnets = append(subnets, subnet)
+			classifiedSubnets = append(classifiedSubnets, subnet)
 		}
 	}
 
-	return subnets, nil
+	return classifiedSubnets, nil
+}
+
+func (c *Connection) handleSubnetClassificationError(err error, subnet *ec2.Subnet, subnetLocation string, classifiedSubnets []*ec2.Subnet) ([]*ec2.Subnet, error) {
+	if subnetLocation == "private" && isNoRouteTableError(err) {
+		isReallyPrivate, verifyErr := c.isSubnetReallyPrivate(*subnet.SubnetId)
+		if verifyErr != nil {
+			return nil, verifyErr
+		}
+		if isReallyPrivate {
+			return append(classifiedSubnets, subnet), nil
+		}
+	}
+	return nil, fmt.Errorf("error checking if subnet %s is publicly routable: %v", *subnet.SubnetId, err)
 }
 
 // isSubnetReallyPrivate checks all route tables to confirm if a subnet is truly private.
