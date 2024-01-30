@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/service/ec2"
 	ec2utils "github.com/l50/awsutils/ec2"
 	"github.com/stretchr/testify/assert"
 )
@@ -52,16 +53,25 @@ func TestGetSubnetID(t *testing.T) {
 	c := ec2utils.NewConnection()
 	vpcs, err := c.ListVPCs()
 	assert.NoError(t, err)
-	subnets, err := c.ListVPCSubnets(*vpcs[0].VpcId, "all")
-	assert.NoError(t, err)
-	assert.True(t, len(subnets) > 0)
 
-	// Retrieve the name of the first subnet correctly
+	allSubnets, err := c.ListVPCSubnets(*vpcs[0].VpcId, "all")
+	assert.NoError(t, err)
+	assert.True(t, len(allSubnets) > 0, "There should be at least one subnet in 'all' category")
+
+	publicSubnets, err := c.ListVPCSubnets(*vpcs[0].VpcId, "public")
+	assert.NoError(t, err)
+
+	privateSubnets, err := c.ListVPCSubnets(*vpcs[0].VpcId, "private")
+	assert.NoError(t, err)
+
+	// Test if the first subnet from allSubnets has a valid 'Name' tag
 	var validSubnetName string
-	for _, tag := range subnets[0].Tags {
-		if *tag.Key == "Name" {
-			validSubnetName = *tag.Value
-			break
+	if len(allSubnets) > 0 {
+		for _, tag := range allSubnets[0].Tags {
+			if *tag.Key == "Name" {
+				validSubnetName = *tag.Value
+				break
+			}
 		}
 	}
 	assert.NotEmpty(t, validSubnetName, "Subnet must have a 'Name' tag")
@@ -83,6 +93,34 @@ func TestGetSubnetID(t *testing.T) {
 		},
 	}
 
+	// Add a public subnet test case if available
+	if len(publicSubnets) > 0 {
+		publicSubnetName := getSubnetNameFromTag(publicSubnets[0])
+		tests = append(tests, struct {
+			name       string
+			subnetName string
+			expectErr  bool
+		}{
+			name:       "Public Subnet",
+			subnetName: publicSubnetName,
+			expectErr:  false,
+		})
+	}
+
+	// Add a private subnet test case if available
+	if len(privateSubnets) > 0 {
+		privateSubnetName := getSubnetNameFromTag(privateSubnets[0])
+		tests = append(tests, struct {
+			name       string
+			subnetName string
+			expectErr  bool
+		}{
+			name:       "Private Subnet",
+			subnetName: privateSubnetName,
+			expectErr:  false,
+		})
+	}
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			c := ec2utils.NewConnection()
@@ -95,6 +133,16 @@ func TestGetSubnetID(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Helper function to extract the name of a subnet from its tags
+func getSubnetNameFromTag(subnet *ec2.Subnet) string {
+	for _, tag := range subnet.Tags {
+		if *tag.Key == "Name" {
+			return *tag.Value
+		}
+	}
+	return ""
 }
 
 func TestGetVPCID(t *testing.T) {
