@@ -10,6 +10,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	// Ensure region is set to us-west-1
+	region, err := ec2utils.NewConnection().GetRegion()
+	if err != nil {
+		panic(err)
+	}
+	if region != "us-west-1" {
+		panic("region must be set to us-west-1 for these tests")
+	}
+}
+
 func TestIsSubnetPublic(t *testing.T) {
 	c := ec2utils.NewConnection()
 	vpcs, err := c.ListVPCs()
@@ -24,13 +35,13 @@ func TestIsSubnetPublic(t *testing.T) {
 		expectErr bool
 	}{
 		{
-			name:      "Valid Subnet ID",
+			name:      "Publicly Routed Subnet ID",
 			subnetID:  *subnets[0].SubnetId,
 			expectErr: false,
 		},
 		{
-			name:      "Invalid Subnet ID",
-			subnetID:  "subnet-invalid",
+			name:      "Non-existent Subnet ID",
+			subnetID:  "subnet-notrealatall",
 			expectErr: true,
 		},
 	}
@@ -186,12 +197,14 @@ func TestGetVPCID(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			c := ec2utils.NewConnection()
-			_, gotError := c.GetVPCID(tc.vpcName)
+			id, gotError := c.GetVPCID(tc.vpcName)
 
 			if tc.expectErr {
 				assert.Error(t, gotError)
+				assert.Empty(t, id)
 			} else {
 				assert.NoError(t, gotError)
+				assert.NotEmpty(t, id)
 			}
 		})
 	}

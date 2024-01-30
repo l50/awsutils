@@ -147,8 +147,17 @@ func (c *Connection) GetVPCID(vpcName string) (string, error) {
 // error: an error if any issue occurs while trying to check whether the
 // provided subnet ID is publicly routable
 func (c *Connection) IsSubnetPublic(subnetID string) (bool, error) {
+	// Ensure the subnet exists before determining if it's public
+	if err := c.checkResourceExistence("subnet", subnetID); err != nil {
+		return false, err
+	}
+
 	routeTableID, err := c.GetSubnetRouteTable(subnetID)
 	if err != nil {
+		// Handle the case where there's no route table for the subnet
+		if strings.Contains(err.Error(), "no route table found") {
+			return false, nil
+		}
 		return false, err
 	}
 
@@ -291,7 +300,6 @@ func (c *Connection) ListVPCSubnets(vpcID string, subnetLocation string) ([]*ec2
 	}
 
 	var subnets []*ec2.Subnet
-
 	for _, subnet := range result.Subnets {
 		if subnetLocation == "all" {
 			subnets = append(subnets, subnet)
@@ -300,10 +308,16 @@ func (c *Connection) ListVPCSubnets(vpcID string, subnetLocation string) ([]*ec2
 
 		isPublic, err := c.IsSubnetPublic(*subnet.SubnetId)
 		if err != nil {
-			// Handle the specific error for missing route tables gracefully for private subnets
 			if subnetLocation == "private" && isNoRouteTableError(err) {
-				subnets = append(subnets, subnet)
-				continue
+				// Verify if the subnet is truly private by checking all route tables
+				isReallyPrivate, verifyErr := c.isSubnetReallyPrivate(*subnet.SubnetId)
+				if verifyErr != nil {
+					return nil, verifyErr
+				}
+				if isReallyPrivate {
+					subnets = append(subnets, subnet)
+					continue
+				}
 			}
 			return nil, fmt.Errorf("error checking if subnet %s is publicly routable: %v", *subnet.SubnetId, err)
 		}
@@ -314,6 +328,28 @@ func (c *Connection) ListVPCSubnets(vpcID string, subnetLocation string) ([]*ec2
 	}
 
 	return subnets, nil
+}
+
+// isSubnetReallyPrivate checks all route tables to confirm if a subnet is truly private.
+func (c *Connection) isSubnetReallyPrivate(subnetID string) (bool, error) {
+	routeTables, err := c.Client.DescribeRouteTables(&ec2.DescribeRouteTablesInput{})
+	if err != nil {
+		return false, fmt.Errorf("error describing route tables: %v", err)
+	}
+
+	for _, routeTable := range routeTables.RouteTables {
+		for _, association := range routeTable.Associations {
+			if association.SubnetId != nil && *association.SubnetId == subnetID {
+				for _, route := range routeTable.Routes {
+					if route.GatewayId != nil && strings.HasPrefix(*route.GatewayId, "igw-") {
+						return false, nil // Subnet has a route to an IGW, so it's not private
+					}
+				}
+			}
+		}
+	}
+
+	return true, nil // No routes to an IGW found, subnet is private
 }
 
 // isNoRouteTableError checks if the error is due to a missing route table, which is a common scenario for private subnets
