@@ -2,6 +2,8 @@ package ec2
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -33,22 +35,53 @@ func (c *Connection) GetSubnetID(subnetName string) (string, error) {
 
 	result, err := c.Client.DescribeSubnets(input)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error describing subnets: %v", err)
 	}
 
 	if len(result.Subnets) == 0 {
-		return "", errors.New("no subnet found with the provided name")
+		return "", fmt.Errorf("no subnet found with the name: %s", subnetName)
 	}
 
 	subnetID := *result.Subnets[0].SubnetId
+	if subnetID == "" {
+		return "", fmt.Errorf("found subnet has empty ID for the name: %s", subnetName)
+	}
+
 	if err := c.checkResourceExistence("subnet", subnetID); err != nil {
-		return "", err
+		return "", fmt.Errorf("subnet with ID %s does not exist: %v", subnetID, err)
 	}
 
 	return subnetID, nil
 }
 
-// GetVPCID retrieves the ID of the VPC with the provided name.
+// GetSubnetRouteTable retrieves the route table ID associated with a specific subnet.
+func (c *Connection) GetSubnetRouteTable(subnetID string) (string, error) {
+	if subnetID == "" {
+		return "", errors.New("no subnet ID provided. Usage: GetSubnetRouteTable <subnet-id>")
+	}
+
+	input := &ec2.DescribeRouteTablesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("association.subnet-id"),
+				Values: []*string{aws.String(subnetID)},
+			},
+		},
+	}
+
+	result, err := c.Client.DescribeRouteTables(input)
+	if err != nil {
+		return "", fmt.Errorf("error fetching route table for subnet %s: %v", subnetID, err)
+	}
+
+	if len(result.RouteTables) == 0 {
+		return "", fmt.Errorf("no route table found for subnet %s", subnetID)
+	}
+
+	return *result.RouteTables[0].RouteTableId, nil
+}
+
+// GetVPCID retrieves the information of a VPC with the provided name.
 //
 // **Parameters:**
 //
@@ -100,7 +133,7 @@ func (c *Connection) GetVPCID(vpcName string) (string, error) {
 	return *result.Vpcs[0].VpcId, nil
 }
 
-// IsSubnetPubliclyRoutable checks whether the provided subnet ID
+// IsSubnetPublic checks whether the provided subnet ID
 // is publicly routable.
 //
 // **Parameters:**
@@ -113,30 +146,38 @@ func (c *Connection) GetVPCID(vpcName string) (string, error) {
 //
 // error: an error if any issue occurs while trying to check whether the
 // provided subnet ID is publicly routable
-func (c *Connection) IsSubnetPubliclyRoutable(subnetID string) (bool, error) {
-	if err := c.checkResourceExistence("subnet", subnetID); err != nil {
+func (c *Connection) IsSubnetPublic(subnetID string) (bool, error) {
+	routeTableID, err := c.GetSubnetRouteTable(subnetID)
+	if err != nil {
 		return false, err
 	}
 
 	input := &ec2.DescribeRouteTablesInput{
-		Filters: []*ec2.Filter{
-			{
-				Name:   aws.String("association.subnet-id"),
-				Values: []*string{aws.String(subnetID)},
-			},
-		},
+		RouteTableIds: []*string{aws.String(routeTableID)},
 	}
+
 	result, err := c.Client.DescribeRouteTables(input)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("error describing route table %s: %v", routeTableID, err)
 	}
-	for _, routeTable := range result.RouteTables {
-		for _, route := range routeTable.Routes {
-			if route.GatewayId != nil && *route.GatewayId != "local" && *route.DestinationCidrBlock == "0.0.0.0/0" {
-				return true, nil
-			}
+
+	// Check if result.RouteTables is not nil and has at least one entry
+	if result.RouteTables == nil || len(result.RouteTables) == 0 {
+		return false, fmt.Errorf("no route tables found for route table ID %s", routeTableID)
+	}
+
+	// Check if Routes is not nil and has at least one entry
+	if result.RouteTables[0].Routes == nil || len(result.RouteTables[0].Routes) == 0 {
+		return false, fmt.Errorf("no routes found in route table %s", routeTableID)
+	}
+
+	for _, route := range result.RouteTables[0].Routes {
+		// Check if route.GatewayId is not nil before dereferencing
+		if route.GatewayId != nil && strings.HasPrefix(*route.GatewayId, "igw-") {
+			return true, nil
 		}
 	}
+
 	return false, nil
 }
 
@@ -172,11 +213,11 @@ func (c *Connection) ListSecurityGroupsForVpc(vpcID string) ([]*ec2.SecurityGrou
 	return result.SecurityGroups, nil
 }
 
-// ListSubnetsForVPC lists subnets for the provided VPC name and subnet location.
+// ListVPCSubnets lists subnets for the provided VPC name and subnet location.
 //
 // **Parameters:**
 //
-// vpcName: the name of the VPC to use. Returns subnets for the default VPC if "default" is provided.
+// vpcID: the ID of the VPC to use.
 // subnetLocation: the location of the subnet. Can be "public", "private", or "all".
 //
 // **Returns:**
@@ -184,10 +225,9 @@ func (c *Connection) ListSecurityGroupsForVpc(vpcID string) ([]*ec2.SecurityGrou
 // []*ec2.Subnet: the list of subnets for the provided VPC name and location
 //
 // error: an error if any issue occurs while trying to list the subnets
-func (c *Connection) ListSubnetsForVPC(vpcName string, subnetLocation string) ([]*ec2.Subnet, error) {
-	// Retrieve the VPC ID for the default VPC
-	vpcID, err := c.GetVPCID(vpcName)
-	if err != nil {
+func (c *Connection) ListVPCSubnets(vpcID string, subnetLocation string) ([]*ec2.Subnet, error) {
+	// Validate VPC existence
+	if err := c.checkResourceExistence("vpc", vpcID); err != nil {
 		return nil, err
 	}
 
@@ -198,12 +238,6 @@ func (c *Connection) ListSubnetsForVPC(vpcName string, subnetLocation string) ([
 
 	// Build the subnet filter based on subnetLocation
 	var filters []*ec2.Filter
-	if subnetLocation != "all" {
-		filters = append(filters, &ec2.Filter{
-			Name:   aws.String("tag:SubnetType"),
-			Values: []*string{aws.String(subnetLocation)},
-		})
-	}
 
 	// Always include the VPC ID in the filter
 	filters = append(filters, &ec2.Filter{
@@ -221,5 +255,39 @@ func (c *Connection) ListSubnetsForVPC(vpcName string, subnetLocation string) ([
 		return nil, err
 	}
 
-	return result.Subnets, nil
+	// Ensure public subnets are routable
+	var subnets []*ec2.Subnet
+	for _, subnet := range result.Subnets {
+		if subnetLocation == "all" {
+			subnets = append(subnets, subnet)
+		} else {
+			isPublic, err := c.IsSubnetPublic(*subnet.SubnetId)
+			if err != nil {
+				return nil, fmt.Errorf("error checking if subnet %s is publicly routable: %v", *subnet.SubnetId, err)
+			}
+			if (subnetLocation == "public" && isPublic) || (subnetLocation == "private" && !isPublic) {
+				subnets = append(subnets, subnet)
+			}
+		}
+	}
+
+	return subnets, nil
+}
+
+// ListVPCs lists all VPCs.
+//
+// **Returns:**
+//
+// []*ec2.Vpc: all VPCs
+//
+// error: an error if any issue occurs while trying to list the VPCs
+func (c *Connection) ListVPCs() ([]*ec2.Vpc, error) {
+	input := &ec2.DescribeVpcsInput{}
+
+	result, err := c.Client.DescribeVpcs(input)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Vpcs, nil
 }

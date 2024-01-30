@@ -304,13 +304,23 @@ the ID of the subnet with the provided name
 
 ---
 
+### Connection.GetSubnetRouteTable(string)
+
+```go
+GetSubnetRouteTable(string) string, error
+```
+
+GetSubnetRouteTable retrieves the route table ID associated with a specific subnet.
+
+---
+
 ### Connection.GetVPCID(string)
 
 ```go
 GetVPCID(string) string, error
 ```
 
-GetVPCID retrieves the ID of the VPC with the provided name.
+GetVPCID retrieves the information of a VPC with the provided name.
 
 **Parameters:**
 
@@ -326,13 +336,13 @@ the ID of the VPC with the provided name
 
 ---
 
-### Connection.IsSubnetPubliclyRoutable(string)
+### Connection.IsSubnetPublic(string)
 
 ```go
-IsSubnetPubliclyRoutable(string) bool, error
+IsSubnetPublic(string) bool, error
 ```
 
-IsSubnetPubliclyRoutable checks whether the provided subnet ID
+IsSubnetPublic checks whether the provided subnet ID
 is publicly routable.
 
 **Parameters:**
@@ -405,17 +415,17 @@ error: an error if any issue occurs while trying to list the security groups
 
 ---
 
-### Connection.ListSubnetsForVPC(string, string)
+### Connection.ListVPCSubnets(string, string)
 
 ```go
-ListSubnetsForVPC(string, string) []*ec2.Subnet, error
+ListVPCSubnets(string, string) []*ec2.Subnet, error
 ```
 
-ListSubnetsForVPC lists subnets for the provided VPC name and subnet location.
+ListVPCSubnets lists subnets for the provided VPC name and subnet location.
 
 **Parameters:**
 
-vpcName: the name of the VPC to use. Returns subnets for the default VPC if "default" is provided.
+vpcID: the ID of the VPC to use.
 subnetLocation: the location of the subnet. Can be "public", "private", or "all".
 
 **Returns:**
@@ -423,6 +433,22 @@ subnetLocation: the location of the subnet. Can be "public", "private", or "all"
 []*ec2.Subnet: the list of subnets for the provided VPC name and location
 
 error: an error if any issue occurs while trying to list the subnets
+
+---
+
+### Connection.ListVPCs()
+
+```go
+ListVPCs() []*ec2.Vpc, error
+```
+
+ListVPCs lists all VPCs.
+
+**Returns:**
+
+[]*ec2.Vpc: all VPCs
+
+error: an error if any issue occurs while trying to list the VPCs
 
 ---
 

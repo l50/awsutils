@@ -5,18 +5,17 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
 	ec2utils "github.com/l50/awsutils/ec2"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsSubnetPubliclyRoutable(t *testing.T) {
+func TestIsSubnetPublic(t *testing.T) {
 	c := ec2utils.NewConnection()
-	routableSubnetID, err := c.GetSubnetID("test-subnet-2")
-	if err != nil {
-		t.Fatalf("failed to get VPC ID: %v", err)
-	}
+	vpcs, err := c.ListVPCs()
+	assert.NoError(t, err)
+	subnets, err := c.ListVPCSubnets(*vpcs[0].VpcId, "private")
+	assert.NoError(t, err)
+	assert.True(t, len(subnets) > 0)
 
 	tests := []struct {
 		name      string
@@ -25,7 +24,7 @@ func TestIsSubnetPubliclyRoutable(t *testing.T) {
 	}{
 		{
 			name:      "Valid Subnet ID",
-			subnetID:  routableSubnetID,
+			subnetID:  *subnets[0].SubnetId,
 			expectErr: false,
 		},
 		{
@@ -38,7 +37,7 @@ func TestIsSubnetPubliclyRoutable(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			c := ec2utils.NewConnection()
-			_, gotError := c.IsSubnetPubliclyRoutable(tc.subnetID)
+			_, gotError := c.IsSubnetPublic(tc.subnetID)
 
 			if tc.expectErr {
 				assert.Error(t, gotError)
@@ -50,6 +49,23 @@ func TestIsSubnetPubliclyRoutable(t *testing.T) {
 }
 
 func TestGetSubnetID(t *testing.T) {
+	c := ec2utils.NewConnection()
+	vpcs, err := c.ListVPCs()
+	assert.NoError(t, err)
+	subnets, err := c.ListVPCSubnets(*vpcs[0].VpcId, "all")
+	assert.NoError(t, err)
+	assert.True(t, len(subnets) > 0)
+
+	// Retrieve the name of the first subnet correctly
+	var validSubnetName string
+	for _, tag := range subnets[0].Tags {
+		if *tag.Key == "Name" {
+			validSubnetName = *tag.Value
+			break
+		}
+	}
+	assert.NotEmpty(t, validSubnetName, "Subnet must have a 'Name' tag")
+
 	tests := []struct {
 		name       string
 		subnetName string
@@ -57,7 +73,7 @@ func TestGetSubnetID(t *testing.T) {
 	}{
 		{
 			name:       "Valid Subnet Name",
-			subnetName: "test-subnet-2",
+			subnetName: validSubnetName,
 			expectErr:  false,
 		},
 		{
@@ -82,6 +98,21 @@ func TestGetSubnetID(t *testing.T) {
 }
 
 func TestGetVPCID(t *testing.T) {
+	c := ec2utils.NewConnection()
+	vpcs, err := c.ListVPCs()
+	assert.NoError(t, err)
+	assert.True(t, len(vpcs) > 0)
+
+	// Ensure your VPCs have 'Name' tags and fetch the name of the first VPC
+	var validVPCName string
+	for _, tag := range vpcs[0].Tags {
+		if *tag.Key == "Name" {
+			validVPCName = *tag.Value
+			break
+		}
+	}
+	assert.NotEmpty(t, validVPCName, "VPC must have a 'Name' tag")
+
 	tests := []struct {
 		name      string
 		vpcName   string
@@ -89,7 +120,7 @@ func TestGetVPCID(t *testing.T) {
 	}{
 		{
 			name:      "Valid VPC Name",
-			vpcName:   "test-vpc",
+			vpcName:   validVPCName,
 			expectErr: false,
 		},
 		{
@@ -115,10 +146,10 @@ func TestGetVPCID(t *testing.T) {
 
 func TestListSecurityGroupsForVpc(t *testing.T) {
 	c := ec2utils.NewConnection()
-	validVPCID, err := c.GetVPCID("test-vpc")
-	if err != nil {
-		t.Fatalf("failed to get VPC ID: %v", err)
-	}
+	vpcs, err := c.ListVPCs()
+	assert.NoError(t, err)
+	assert.True(t, len(vpcs) > 0)
+	validVPCID := *vpcs[0].VpcId
 
 	tests := []struct {
 		name      string
@@ -139,7 +170,6 @@ func TestListSecurityGroupsForVpc(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			c := ec2utils.NewConnection()
 			_, gotError := c.ListSecurityGroupsForVpc(tc.vpcID)
 
 			if tc.expectErr {
@@ -151,47 +181,28 @@ func TestListSecurityGroupsForVpc(t *testing.T) {
 	}
 }
 
-func TestListSubnetsForVPC(t *testing.T) {
+func TestListVPCSubnets(t *testing.T) {
 	tests := []struct {
-		name             string
-		vpcName          string
-		subnetLocation   string
-		mockVpcOutput    ec2.DescribeVpcsOutput
-		mockSubnetOutput ec2.DescribeSubnetsOutput
-		wantSubnetIds    []string
-		wantErr          error
+		name           string
+		subnetLocation string
+		wantSubnetIds  []string
+		wantErr        error
 	}{
 		{
 			name:           "valid request with all subnets",
-			vpcName:        "default",
 			subnetLocation: "all",
-			mockVpcOutput: ec2.DescribeVpcsOutput{
-				Vpcs: []*ec2.Vpc{
-					{
-						VpcId: aws.String("vpc-12345"),
-					},
-				},
-			},
-			mockSubnetOutput: ec2.DescribeSubnetsOutput{
-				Subnets: []*ec2.Subnet{
-					{
-						SubnetId: aws.String("subnet-eb0fc5b1"),
-					},
-					{
-						SubnetId: aws.String("subnet-1b49f77d"),
-					},
-				},
-			},
 		},
 	}
 
-	// Regex to match subnet IDs (e.g., subnet-123abc)
 	subnetIDRegex := regexp.MustCompile(`^subnet-[0-9a-f]+$`)
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			c := ec2utils.NewConnection()
-			gotSubnets, gotError := c.ListSubnetsForVPC(tc.vpcName, tc.subnetLocation)
+			vpcs, err := c.ListVPCs()
+			assert.NoError(t, err)
+
+			gotSubnets, gotError := c.ListVPCSubnets(*vpcs[0].VpcId, tc.subnetLocation)
 
 			if tc.wantErr != nil {
 				if gotError == nil {
@@ -223,6 +234,31 @@ func TestListSubnetsForVPC(t *testing.T) {
 				if subnet.SubnetID == nil || !subnetIDRegex.MatchString(*subnet.SubnetID) {
 					t.Errorf("received invalid subnet ID: %v", subnet.SubnetID)
 				}
+			}
+		})
+	}
+}
+
+func TestListVPCs(t *testing.T) {
+	tests := []struct {
+		name      string
+		expectErr bool
+	}{
+		{
+			name:      "Valid Request",
+			expectErr: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			c := ec2utils.NewConnection()
+			_, gotError := c.ListVPCs()
+
+			if tc.expectErr {
+				assert.Error(t, gotError)
+			} else {
+				assert.NoError(t, gotError)
 			}
 		})
 	}
