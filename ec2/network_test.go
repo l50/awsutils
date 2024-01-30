@@ -144,6 +144,43 @@ func TestGetVPCID(t *testing.T) {
 	}
 }
 
+func TestListSecurityGroupsForSubnet(t *testing.T) {
+	c := ec2utils.NewConnection()
+	validSubnetID, err := c.GetSubnetID("test-subnet-2")
+	if err != nil {
+		t.Fatalf("failed to get VPC ID: %v", err)
+	}
+
+	tests := []struct {
+		name      string
+		subnetID  string
+		expectErr bool
+	}{
+		{
+			name:      "Valid Subnet ID",
+			subnetID:  validSubnetID,
+			expectErr: false,
+		},
+		{
+			name:      "Invalid Subnet ID",
+			subnetID:  "subnet-invalid",
+			expectErr: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, gotError := c.ListSecurityGroupsForSubnet(tc.subnetID)
+
+			if tc.expectErr {
+				assert.Error(t, gotError)
+			} else {
+				assert.NoError(t, gotError)
+			}
+		})
+	}
+}
+
 func TestListSecurityGroupsForVpc(t *testing.T) {
 	c := ec2utils.NewConnection()
 	vpcs, err := c.ListVPCs()

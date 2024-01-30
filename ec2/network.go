@@ -213,6 +213,41 @@ func (c *Connection) ListSecurityGroupsForVpc(vpcID string) ([]*ec2.SecurityGrou
 	return result.SecurityGroups, nil
 }
 
+// ListSecurityGroupsForSubnet lists all security groups
+// for the provided subnet ID.
+//
+// **Parameters:**
+//
+// subnetID: the ID of the subnet to use
+//
+// **Returns:**
+//
+// []*ec2.SecurityGroup: all security groups for the provided subnet ID
+//
+// error: an error if any issue occurs while trying to list the security groups
+func (c *Connection) ListSecurityGroupsForSubnet(subnetID string) ([]*ec2.SecurityGroup, error) {
+	if err := c.checkResourceExistence("subnet", subnetID); err != nil {
+		return nil, err
+	}
+	input := &ec2.DescribeSecurityGroupsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name: aws.String("ip-permission.cidr"),
+				Values: []*string{
+					aws.String(subnetID),
+				},
+			},
+		},
+	}
+
+	result, err := c.Client.DescribeSecurityGroups(input)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.SecurityGroups, nil
+}
+
 // ListVPCSubnets lists subnets for the provided VPC name and subnet location.
 //
 // **Parameters:**
