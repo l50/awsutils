@@ -561,41 +561,6 @@ func (c *Connection) ListSecurityGroups() ([]*ec2.SecurityGroup, error) {
 	return result.SecurityGroups, nil
 }
 
-// ListSecurityGroupsForSubnet lists all security groups
-// for the provided subnet ID.
-//
-// **Parameters:**
-//
-// subnetID: the ID of the subnet to use
-//
-// **Returns:**
-//
-// []*ec2.SecurityGroup: all security groups for the provided subnet ID
-//
-// error: an error if any issue occurs while trying to list the security groups
-func (c *Connection) ListSecurityGroupsForSubnet(subnetID string) ([]*ec2.SecurityGroup, error) {
-	if err := c.checkResourceExistence("subnet", subnetID); err != nil {
-		return nil, err
-	}
-	input := &ec2.DescribeSecurityGroupsInput{
-		Filters: []*ec2.Filter{
-			{
-				Name: aws.String("ip-permission.cidr"),
-				Values: []*string{
-					aws.String(subnetID),
-				},
-			},
-		},
-	}
-
-	result, err := c.Client.DescribeSecurityGroups(input)
-	if err != nil {
-		return nil, err
-	}
-
-	return result.SecurityGroups, nil
-}
-
 // CreateSecurityGroup creates a new security group with the provided name,
 // description and VPC ID.
 //
@@ -645,7 +610,6 @@ func (c *Connection) DestroySecurityGroup(groupID string) error {
 	return nil
 }
 
-// Helper function to check if a given resource exists
 func (c *Connection) checkResourceExistence(resourceName, resourceID string) error {
 	switch resourceName {
 	case "subnet":
