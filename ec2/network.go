@@ -290,23 +290,36 @@ func (c *Connection) ListVPCSubnets(vpcID string, subnetLocation string) ([]*ec2
 		return nil, err
 	}
 
-	// Ensure public subnets are routable
 	var subnets []*ec2.Subnet
+
 	for _, subnet := range result.Subnets {
 		if subnetLocation == "all" {
 			subnets = append(subnets, subnet)
-		} else {
-			isPublic, err := c.IsSubnetPublic(*subnet.SubnetId)
-			if err != nil {
-				return nil, fmt.Errorf("error checking if subnet %s is publicly routable: %v", *subnet.SubnetId, err)
-			}
-			if (subnetLocation == "public" && isPublic) || (subnetLocation == "private" && !isPublic) {
+			continue
+		}
+
+		isPublic, err := c.IsSubnetPublic(*subnet.SubnetId)
+		if err != nil {
+			// Handle the specific error for missing route tables gracefully for private subnets
+			if subnetLocation == "private" && isNoRouteTableError(err) {
 				subnets = append(subnets, subnet)
+				continue
 			}
+			return nil, fmt.Errorf("error checking if subnet %s is publicly routable: %v", *subnet.SubnetId, err)
+		}
+
+		if (subnetLocation == "public" && isPublic) || (subnetLocation == "private" && !isPublic) {
+			subnets = append(subnets, subnet)
 		}
 	}
 
 	return subnets, nil
+}
+
+// isNoRouteTableError checks if the error is due to a missing route table, which is a common scenario for private subnets
+func isNoRouteTableError(err error) bool {
+	// Adjust the condition to match the specific error message or error type you're receiving for no route table
+	return strings.Contains(err.Error(), "no route table found")
 }
 
 // ListVPCs lists all VPCs.
