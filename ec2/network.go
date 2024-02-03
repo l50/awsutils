@@ -180,10 +180,11 @@ func (c *Connection) IsSubnetPublic(subnetID string) (bool, error) {
 		return false, fmt.Errorf("no routes found in route table %s", routeTableID)
 	}
 
-	for _, route := range result.RouteTables[0].Routes {
-		// Check if route.GatewayId is not nil before dereferencing
-		if route.GatewayId != nil && strings.HasPrefix(*route.GatewayId, "igw-") {
-			return true, nil
+	for _, route := range result.RouteTables {
+		for _, r := range route.Routes {
+			if strings.HasPrefix(aws.StringValue(r.GatewayId), "igw-") {
+				return true, nil
+			}
 		}
 	}
 
