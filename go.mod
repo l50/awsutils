@@ -1,11 +1,13 @@
 module github.com/l50/awsutils
 
-go 1.21
+go 1.22
+
+toolchain go1.22.1
 
 require (
 	github.com/aws/aws-sdk-go v1.50.20
 	github.com/google/uuid v1.6.0
-	github.com/l50/goutils/v2 v2.2.2
+	github.com/l50/goutils/v2 v2.2.3
 	github.com/stretchr/testify v1.8.4
 )
 
@@ -25,7 +27,7 @@ require (
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/skeema/knownhosts v1.2.1 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	golang.org/x/crypto v0.19.0 // indirect
+	golang.org/x/crypto v0.20.0 // indirect
 	golang.org/x/mod v0.15.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
