@@ -5,7 +5,7 @@ go 1.22
 toolchain go1.22.1
 
 require (
-	github.com/aws/aws-sdk-go v1.51.6
+	github.com/aws/aws-sdk-go v1.51.18
 	github.com/google/uuid v1.6.0
 	github.com/l50/goutils/v2 v2.2.4
 	github.com/stretchr/testify v1.9.0
