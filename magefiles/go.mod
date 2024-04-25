@@ -2,7 +2,7 @@ module magefile
 
 go 1.22
 
-toolchain go1.22.1
+toolchain go1.22.2
 
 require (
 	github.com/fatih/color v1.16.0
@@ -13,7 +13,7 @@ require (
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
-	github.com/Microsoft/go-winio v0.6.1 // indirect
+	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.0.0 // indirect
 	github.com/bitfield/script v0.22.0 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect

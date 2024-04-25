@@ -2,17 +2,17 @@ module github.com/l50/awsutils
 
 go 1.22
 
-toolchain go1.22.1
+toolchain go1.22.2
 
 require (
-	github.com/aws/aws-sdk-go v1.51.18
+	github.com/aws/aws-sdk-go v1.51.25
 	github.com/google/uuid v1.6.0
 	github.com/l50/goutils/v2 v2.2.4
 	github.com/stretchr/testify v1.9.0
 )
 
 require (
-	github.com/Microsoft/go-winio v0.6.1 // indirect
+	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
