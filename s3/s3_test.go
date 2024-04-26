@@ -67,7 +67,7 @@ func TestS3Functions(t *testing.T) {
 
 			// TestDownloadBucketFile
 			testContent := []byte("teststring123")
-			if err := fileutils.Create(tc.uploadFile, testContent, fileutils.CreateFile); err != nil {
+			if _, err := fileutils.Create(tc.uploadFile, testContent, fileutils.CreateFile); err != nil {
 				t.Fatalf("error creating %s: %v", tc.uploadFile, err)
 			}
 
