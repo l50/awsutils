@@ -29,7 +29,7 @@ func (m *mockSTSClient) GetCallerIdentity(ctx context.Context, params *sts.GetCa
 
 func TestGetAWSIdentity(t *testing.T) {
 	mockClient := new(mockSTSClient)
-	service := iamHelpers.IdentityService{Client: mockClient}
+	service := iamHelpers.AWSService{STSClient: mockClient}
 
 	tests := []struct {
 		name      string
@@ -93,7 +93,7 @@ func (m *mockIAMClient) GetInstanceProfile(ctx context.Context, params *iam.GetI
 
 func TestGetInstanceProfile(t *testing.T) {
 	mockClient := new(mockIAMClient)
-	service := iamHelpers.InstanceProfileService{Client: mockClient}
+	service := iamHelpers.AWSService{IAMClient: mockClient}
 
 	tests := []struct {
 		name      string
@@ -139,84 +139,3 @@ func TestGetInstanceProfile(t *testing.T) {
 		})
 	}
 }
-
-// func TestGetInstanceProfile(t *testing.T) {
-// 	mockClient := new(mockIAMClient)
-// 	service := iamHelpers.IdentityService{Client: mockClient}
-
-// 	tests := []struct {
-// 		name        string
-// 		profileName string
-// 		mockSetup   func()
-// 		// mockResult  *iam.GetInstanceProfileOutput
-// 		// mockError   error
-// 		want    *iam.InstanceProfile
-// 		wantErr bool
-// 	}{
-// 		{
-// 			name:        "Successful instance profile retrieval",
-// 			profileName: "TestInstanceProfile",
-// 			mockSetup: func() {
-// 				mockClient.On("GetInstanceProfile", mock.Anything, &iam.GetInstanceProfileInput{
-// 					InstanceProfileName: aws.String("TestInstanceProfile"),
-// 				}).Return(&iam.GetInstanceProfileOutput{
-// 					InstanceProfile: &iam.InstanceProfile{
-// 						InstanceProfileName: aws.String("TestInstanceProfile"),
-// 						// Add any other fields you want to mock here
-// 					},
-// 				}, nil).Once()
-// 			},
-// 			wantProfile: &iam.InstanceProfile{
-// 				InstanceProfileName: aws.String("TestInstanceProfile"),
-// 				// Add any other fields you expect in the result here
-// 			},
-// 			wantErr: false,
-// 		},
-// 		{
-// 			name:        "Failed instance profile retrieval",
-// 			profileName: "NonExistentProfile",
-// 			mockSetup: func() {
-// 				mockClient.On("GetInstanceProfile", mock.Anything, &iam.GetInstanceProfileInput{
-// 					InstanceProfileName: aws.String("NonExistentProfile"),
-// 				}).Return(nil, errors.New("failed to retrieve instance profile")).Once()
-// 			},
-// 			wantProfile: nil,
-// 			wantErr:     true,
-// 		},
-// 	}
-
-// 	for _, tc := range tests {
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			tc.mockSetup()
-// 			profile, err := service.GetInstanceProfile(tc.profileName)
-// 			if tc.wantErr {
-// 				assert.Error(t, err)
-// 			} else {
-// 				assert.NoError(t, err)
-// 				assert.Equal(t, tc.wantProfile, profile)
-// 			}
-// 			mockClient.AssertExpectations(t)
-// 		})
-// 	}
-// }
-
-// // // 	for _, tc := range tests {
-// // // 		t.Run(tc.name, func(t *testing.T) {
-// // // 			input := &iam.GetInstanceProfileInput{
-// // // 				InstanceProfileName: aws.String(tc.profileName),
-// // // 			}
-// // // 			mockIAM.On("GetInstanceProfile", input).Return(tc.mockResult, tc.mockError).Once()
-
-// // // 			got, err := iamHelpers.GetInstanceProfile(tc.profileName)
-
-// // // 			if tc.wantErr {
-// // // 				assert.Error(t, err)
-// // // 			} else {
-// // // 				assert.NoError(t, err)
-// // // 				assert.Equal(t, tc.want, got)
-// // // 			}
-
-// // // 			mockIAM.AssertExpectations(t)
-// // // 		})
-// // // 	}
-// // // }
