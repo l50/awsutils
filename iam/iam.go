@@ -21,13 +21,13 @@ type STSClientAPI interface {
 	GetCallerIdentity(ctx context.Context, params *sts.GetCallerIdentityInput, optFns ...func(*sts.Options)) (*sts.GetCallerIdentityOutput, error)
 }
 
-// IAMClientAPI represents the interface needed to make calls
+// IdentityClientAPI represents the interface needed to make calls
 // to the AWS IAM service.
 //
 // **Attributes:**
 //
 // GetInstanceProfile: Function to get the instance profile.
-type IAMClientAPI interface {
+type IdentityClientAPI interface {
 	GetInstanceProfile(ctx context.Context, params *iam.GetInstanceProfileInput, optFns ...func(*iam.Options)) (*iam.GetInstanceProfileOutput, error)
 }
 
@@ -39,7 +39,7 @@ type IAMClientAPI interface {
 // IAMClient: Client to make calls to the AWS IAM service.
 type AWSService struct {
 	STSClient STSClientAPI
-	IAMClient IAMClientAPI
+	IAMClient IdentityClientAPI
 }
 
 // AWSIdentity represents the identity of an AWS account.
