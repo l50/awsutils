@@ -115,7 +115,7 @@ func GeneratePackageDocs() error {
 		Name:  "awsutils",
 	}
 
-	templatePath := filepath.Join("magefiles", "tmpl", "README.md.tmpl")
+	templatePath := filepath.Join("templates", "README.md.tmpl")
 	if err := docs.CreatePackageDocs(fs, repo, templatePath); err != nil {
 		return fmt.Errorf("failed to create package docs: %v", err)
 	}
