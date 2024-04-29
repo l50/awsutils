@@ -1,10 +1,17 @@
 #!/bin/bash
 set -exo pipefail
 
-# Check if Prettier is installed
-if ! [ -x "$(command -v prettier)" ]; then
-    echo 'Error: Prettier is not installed.' >&2
+# Check if npm is installed
+if ! [ -x "$(command -v npm)" ]; then
+    echo 'Error: npm is not installed.' >&2
     exit 1
+else
+    # Check if Prettier is installed
+    if ! [ -x "$(command -v prettier)" ]; then
+        echo 'Error: Prettier is not installed.' >&2
+        echo 'Installing Prettier...'
+        npm install -g prettier
+    fi
 fi
 
 # Run Prettier on staged .json, .yaml, and .yml files

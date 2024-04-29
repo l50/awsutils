@@ -18,13 +18,52 @@ designed to simplify common iam tasks.
 
 ## Functions
 
-### GetIamInstanceProfile(string)
+### AWSService.GetAWSIdentity()
 
 ```go
-GetIamInstanceProfile(string) *iam.InstanceProfile, error
+GetAWSIdentity() *AWSIdentity, error
 ```
 
-GetIamInstanceProfile retrieves the IAM instance profile by its name
+GetAWSIdentity retrieves the AWS identity of the caller.
+
+**Returns:**
+
+*AWSIdentity: A pointer to the AWSIdentity of the caller.
+error: An error if any issue occurs while trying to get the AWS identity.
+
+---
+
+### AWSService.GetInstanceProfile(string)
+
+```go
+GetInstanceProfile(string) *types.InstanceProfile, error
+```
+
+GetInstanceProfile retrieves the instance profile for a given profile name.
+
+**Parameters:**
+
+profileName: The name of the profile to retrieve.
+
+**Returns:**
+
+*types.InstanceProfile: A pointer to the InstanceProfile.
+error: An error if any issue occurs while trying to get the instance profile.
+
+---
+
+### NewAWSService()
+
+```go
+NewAWSService() *AWSService, error
+```
+
+NewAWSService creates a new AWSService with the default AWS configuration.
+
+**Returns:**
+
+*AWSService: A pointer to the newly created AWSService.
+error: An error if any issue occurs while trying to create the AWSService.
 
 ---
 

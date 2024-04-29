@@ -35,11 +35,6 @@
   description: >-
     Changes made to Git resources
 
-- name: area/magefiles
-  color: "7BD7E0"
-  description: >-
-    Changes made to Magefiles
-
 - name: area/go-mod-sum
   color: "7BD7E0"
   description: >-
