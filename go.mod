@@ -12,7 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.28.6
 	github.com/fatih/color v1.16.0
 	github.com/google/uuid v1.6.0
-	github.com/l50/goutils/v2 v2.2.5-0.20240426233656-933328a18c73
+	github.com/l50/goutils/v2 v2.2.5-0.20240429044821-ced13da5dd06
 	github.com/magefile/mage v1.15.0
 	github.com/spf13/afero v1.11.0
 	github.com/stretchr/testify v1.9.0
