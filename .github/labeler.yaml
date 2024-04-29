@@ -28,10 +28,6 @@ area/s3:
   - changed-files:
       - any-glob-to-any-file: "s3/*.go"
 
-area/magefiles:
-  - changed-files:
-      - any-glob-to-any-file: "magefiles/*"
-
 area/go-mod-sum:
   - changed-files:
       - any-glob-to-any-file: "go.mod"

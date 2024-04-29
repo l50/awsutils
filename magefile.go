@@ -42,19 +42,7 @@ func init() {
 // error: An error if any issue occurs while trying to
 // install the dependencies.
 func InstallDeps() error {
-	fmt.Println(color.YellowString("Running go mod tidy on magefiles and repo root."))
-	cwd := sys.Gwd()
-	if err := sys.Cd("magefiles"); err != nil {
-		return fmt.Errorf("failed to cd into magefiles directory: %v", err)
-	}
-
-	if err := mageutils.Tidy(); err != nil {
-		return fmt.Errorf("failed to install dependencies: %v", err)
-	}
-
-	if err := sys.Cd(cwd); err != nil {
-		return fmt.Errorf("failed to cd back into repo root: %v", err)
-	}
+	fmt.Println(color.YellowString("Running go mod tidy."))
 
 	if err := mageutils.Tidy(); err != nil {
 		return fmt.Errorf("failed to install dependencies: %v", err)
@@ -230,7 +218,7 @@ func UpdateDocs() error {
 
 	fs := afero.NewOsFs()
 
-	templatePath := filepath.Join("magefiles", "tmpl", "README.md.tmpl")
+	templatePath := filepath.Join("templates", "README.md.tmpl")
 
 	if err := docs.CreatePackageDocs(fs, repo, templatePath); err != nil {
 		return fmt.Errorf("failed to update docs: %v", err)
