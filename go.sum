@@ -107,6 +107,8 @@ github.com/l50/goutils/v2 v2.2.5-0.20240429044821-ced13da5dd06 h1:fXYqGxWB6bhEm5
 github.com/l50/goutils/v2 v2.2.5-0.20240429044821-ced13da5dd06/go.mod h1:iBGW98jiDZlkU0mdeYObcSA6VXCf2gPEO5JLEfojKYk=
 github.com/l50/goutils/v2 v2.2.5 h1:ecwjX4DWwscKFODLNPTZWnvan93BaQiTM/GDHIKV600=
 github.com/l50/goutils/v2 v2.2.5/go.mod h1:iBGW98jiDZlkU0mdeYObcSA6VXCf2gPEO5JLEfojKYk=
+github.com/l50/goutils/v2 v2.2.6 h1:Sq5duam2aMndxECMraqjTKeuTkqdrHY/4TdV1sgCY9w=
+github.com/l50/goutils/v2 v2.2.6/go.mod h1:SZ5JtZqtaWxIAQqbnNbd+cPZ/YCb7hfufFfBvQ+d7m4=
 github.com/magefile/mage v1.15.0 h1:BvGheCMAsG3bWUDbZ8AyXXpCNwU9u5CB6sM+HNb9HYg=
 github.com/magefile/mage v1.15.0/go.mod h1:z5UZb/iS3GoOSn0JgWuiw7dxlurVYTu+/jHXqQg881A=
 github.com/mattn/go-colorable v0.1.13 h1:fFA4WZxdEF4tXPZVKMLwD8oUnCTTo08duU7wxecdEvA=
