@@ -5,7 +5,7 @@ go 1.22.0
 toolchain go1.22.5
 
 require (
-	github.com/aws/aws-sdk-go v1.54.11
+	github.com/aws/aws-sdk-go v1.54.15
   github.com/aws/aws-sdk-go-v2 v1.30.1
   github.com/aws/aws-sdk-go-v2/config v1.27.23
 	github.com/aws/aws-sdk-go-v2/service/iam v1.34.1
