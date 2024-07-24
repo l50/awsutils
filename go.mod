@@ -34,7 +34,7 @@ require (
 	github.com/aws/smithy-go v1.20.3 // indirect
 	github.com/bitfield/script v0.22.1 // indirect
 	github.com/cloudflare/circl v1.3.9 // indirect
-	github.com/cyphar/filepath-securejoin v0.3.0 // indirect
+	github.com/cyphar/filepath-securejoin v0.3.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
