@@ -2,7 +2,7 @@ module github.com/l50/awsutils
 
 go 1.22.0
 
-toolchain go1.22.5
+toolchain go1.22.6
 
 require (
 	github.com/aws/aws-sdk-go v1.54.15
