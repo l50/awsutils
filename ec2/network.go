@@ -170,13 +170,13 @@ func (c *Connection) IsSubnetPublic(subnetID string) (bool, error) {
 		return false, fmt.Errorf("error describing route table %s: %v", routeTableID, err)
 	}
 
-	// Check if result.RouteTables is not nil and has at least one entry
-	if result.RouteTables == nil || len(result.RouteTables) == 0 {
+	// Simplified check: len() is safe to call on nil slices
+	if len(result.RouteTables) == 0 {
 		return false, fmt.Errorf("no route tables found for route table ID %s", routeTableID)
 	}
 
-	// Check if Routes is not nil and has at least one entry
-	if result.RouteTables[0].Routes == nil || len(result.RouteTables[0].Routes) == 0 {
+	// Simplified check: len() is safe to call on nil slices
+	if len(result.RouteTables[0].Routes) == 0 {
 		return false, fmt.Errorf("no routes found in route table %s", routeTableID)
 	}
 
