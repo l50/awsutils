@@ -1,8 +1,8 @@
 module github.com/l50/awsutils
 
-go 1.22.0
+go 1.24
 
-toolchain go1.22.5
+toolchain go1.24.7
 
 require (
 	github.com/aws/aws-sdk-go v1.54.15
@@ -42,7 +42,7 @@ require (
 	github.com/go-git/go-git/v5 v5.12.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/itchyny/gojq v0.12.16 // indirect
-	github.com/itchyny/timefmt-go v0.1.6 // indirect
+	github.com/itchyny/timefmt-go v0.1.7 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
