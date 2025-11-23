@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Set up git repository
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@407ffafae6a767df3e0230c3df91b6443ae8df75 # v2
