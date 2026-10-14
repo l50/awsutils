@@ -1,52 +1,7 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: [
-    "config:base",
-    "docker:enableMajor",
-    ":disableRateLimiting",
-    ":dependencyDashboard",
-    ":semanticCommits",
-    ":enablePreCommit",
-    ":automergeDigest",
-    ":automergeBranch",
-    "github>l50/awsutils//.github/renovate/autoMerge.json5",
-    "helpers:pinGitHubActionDigests",
+    "github>CowDogMoo/renovate-config",
+    "github>CowDogMoo/renovate-config:go",
   ],
-  dependencyDashboardTitle: "Renovate Dashboard 🤖",
-  suppressNotifications: ["prIgnoreNotification"],
-  rebaseWhen: "conflicted",
-  commitBodyTable: true,
-  "pre-commit": {
-    enabled: true,
-  },
-  packageRules: [
-    {
-      matchManagers: ["gomod"],
-      matchPackagePatterns: ["*"],
-      enabled: true,
-    },
-    {
-      description: "Auto merge all updates if tests pass",
-      matchPackagePatterns: ["*"],
-      matchManagers: ["github-actions", "gomod"],
-      automerge: true,
-      automergeStrategy: "squash",
-      requiredStatusChecks: ["tests", "pre-commit"],
-    },
-  ],
-  lockFileMaintenance: {
-    enabled: true,
-    automerge: true,
-  },
-  customManagers: [
-    {
-      customType: "regex",
-      fileMatch: [".sh$"],
-      matchStrings: [
-        "go install (?<depName>[^@]+?)@(?<currentValue>[0-9.-a-zA-Z]+)",
-      ],
-      datasourceTemplate: "go",
-    },
-  ],
-  platformAutomerge: true,
 }
