@@ -11,7 +11,7 @@ require (
 	github.com/fatih/color v1.17.0
 	github.com/google/uuid v1.6.0
 	github.com/l50/goutils/v2 v2.2.8
-	github.com/magefile/mage v1.15.0
+	github.com/magefile/mage v1.17.2
 	github.com/spf13/afero v1.11.0
 	github.com/stretchr/testify v1.12.1
 )
