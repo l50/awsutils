@@ -49,13 +49,57 @@ func InstallDeps() error {
 	}
 
 	fmt.Println(color.YellowString("Installing dependencies."))
-	if err := lint.InstallGoPCDeps(); err != nil {
+	if err := mageutils.InstallGoDeps(pcDeps); err != nil {
 		return fmt.Errorf("failed to install pre-commit dependencies: %v", err)
+	}
+
+	if err := installGoCritic(); err != nil {
+		return fmt.Errorf("failed to install gocritic: %v", err)
 	}
 
 	if err := mageutils.InstallVSCodeModules(); err != nil {
 		return fmt.Errorf(color.RedString(
 			"failed to install vscode-go modules: %v", err))
+	}
+
+	return nil
+}
+
+// pcDeps are the Go tools used by the pre-commit hooks. golangci-lint and
+// goreleaser use their v2 module paths because the v1 releases neither
+// build nor typecheck under Go 1.27.
+var pcDeps = []string{
+	"golang.org/x/lint/golint",
+	"golang.org/x/tools/cmd/goimports",
+	"github.com/fzipp/gocyclo/cmd/gocyclo",
+	"github.com/golangci/golangci-lint/v2/cmd/golangci-lint",
+	"github.com/goreleaser/goreleaser/v2",
+}
+
+// installGoCritic builds gocritic against the latest golang.org/x/tools.
+// The x/tools version pinned by gocritic releases reports false positives
+// (sloppyTypeAssert) under Go 1.27, and `go install pkg@latest` cannot
+// override a dependency version, so the build happens in a scratch module.
+func installGoCritic() error {
+	dir, err := os.MkdirTemp("", "gocritic-build")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+
+	steps := [][]string{
+		{"mod", "init", "gocritic-build"},
+		{"get", "github.com/go-critic/go-critic/cmd/gocritic@latest", "golang.org/x/tools@latest"},
+		{"install", "github.com/go-critic/go-critic/cmd/gocritic"},
+	}
+	for _, args := range steps {
+		cmd := exec.Command("go", args...)
+		cmd.Dir = dir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("go %s: %w", strings.Join(args, " "), err)
+		}
 	}
 
 	return nil
