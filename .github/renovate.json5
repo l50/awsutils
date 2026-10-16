@@ -4,12 +4,4 @@
     "github>CowDogMoo/renovate-config",
     "github>CowDogMoo/renovate-config:go",
   ],
-  packageRules: [
-    {
-      description: "aws-sdk-go v1 is deprecated and v1.55+ trips staticcheck SA1019; hold it at v1.54.15 until the dynamo, ec2, s3, secretsmanager, and ssm packages migrate to aws-sdk-go-v2.",
-      matchManagers: ["gomod"],
-      matchPackageNames: ["github.com/aws/aws-sdk-go"],
-      enabled: false,
-    },
-  ],
 }
