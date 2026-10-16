@@ -1,0 +1,12 @@
+---
+version: "2"
+
+linters:
+  default: standard
+  exclusions:
+    rules:
+      # aws-sdk-go v1 is deprecated; drop this once dynamo, ec2, s3,
+      # secretsmanager, and ssm migrate to aws-sdk-go-v2.
+      - linters:
+          - staticcheck
+        text: 'SA1019: "?github\.com/aws/aws-sdk-go/[^ ]+"? is deprecated: aws-sdk-go is deprecated'

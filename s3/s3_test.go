@@ -1,7 +1,6 @@
 package s3_test
 
 import (
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -91,13 +90,7 @@ func TestS3Functions(t *testing.T) {
 				t.Fatalf("error downloading %s from %s: %v", tc.uploadFile, tc.bucketName, err)
 			}
 
-			file, err := os.Open(downloadPath)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer file.Close()
-
-			content, err := io.ReadAll(file)
+			content, err := os.ReadFile(downloadPath)
 			if err != nil {
 				t.Fatal(err)
 			}

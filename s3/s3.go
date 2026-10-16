@@ -227,7 +227,8 @@ func UploadBucketFile(sess *session.Session, bucketName string, uploadFP string)
 		return err
 	}
 
-	defer file.Close()
+	// The file is only read, so a Close error cannot lose data.
+	defer func() { _ = file.Close() }()
 
 	if _, err := uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(bucketName),
@@ -257,7 +258,7 @@ func UploadBucketFile(sess *session.Session, bucketName string, uploadFP string)
 //
 // string: The name of the downloaded file.
 // error: An error if the file could not be downloaded.
-func DownloadBucketFile(sess *session.Session, bucketName string, objectKey string, downloadFP string) (string, error) {
+func DownloadBucketFile(sess *session.Session, bucketName string, objectKey string, downloadFP string) (_ string, err error) {
 	downloader := s3manager.NewDownloader(sess)
 
 	file, err := os.Create(downloadFP)
@@ -265,7 +266,11 @@ func DownloadBucketFile(sess *session.Session, bucketName string, objectKey stri
 		return "", err
 	}
 
-	defer file.Close()
+	defer func() {
+		if cerr := file.Close(); cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
 
 	numBytes, err := downloader.Download(file,
 		&s3.GetObjectInput{

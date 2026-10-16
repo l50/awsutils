@@ -1,9 +1,9 @@
 module github.com/l50/awsutils
 
-go 1.25.0
+go 1.27.2
 
 require (
-	github.com/aws/aws-sdk-go v1.54.15
+	github.com/aws/aws-sdk-go v1.55.8
 	github.com/aws/aws-sdk-go-v2 v1.47.3
 	github.com/aws/aws-sdk-go-v2/config v1.33.9
 	github.com/aws/aws-sdk-go-v2/service/iam v1.64.4
