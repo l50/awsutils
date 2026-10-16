@@ -1,0 +1,25 @@
+---
+name: Go CI
+on:
+  push:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+  # Run once a week (see https://crontab.guru)
+  schedule:
+    - cron: "0 0 * * 0"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  go-ci:
+    uses: CowDogMoo/renovate-config/.github/workflows/go-ci.yaml@main
+    permissions:
+      contents: read
+    with:
+      go-installs: github.com/magefile/mage@latest
+      pre-commit-command: mage installDeps && mage runPreCommit
+      # tests.yaml keeps the tests job: it needs AWS OIDC and Coveralls.
+      tests: false
